@@ -85,6 +85,24 @@ flowchart LR
 6. **Validation** : schéma Pydantic, contrôle de cohérence (compétence ↔ objectifs ↔ évaluation), réessai borné.
 7. **Export** : rendu DOCX / PDF à partir du modèle validé.
 
+### Règle de conformité à double ancrage : Rulebook et Few-Shot Gold Standard
+
+Toute fiche générée (fiche de préparation, fiche journalière, guide d'exécution pédagogique), primaire ou secondaire, DOIT se conformer strictement et cumulativement à deux ancrages :
+
+1. **Le Guide d'Exécution Pédagogique officiel : le « Rulebook »**. C'est la contrainte légale et pédagogique : cadre réglementaire strict, progression, compétences terminales, durée, prérequis et situations d'apprentissage. Il définit ce qui est obligatoire et ce qui est interdit. Aucune fiche ne peut s'en écarter.
+2. **Le corpus de fiches modèles étalons : le « Few-Shot Gold Standard »**. Ce sont les fiches réelles validées par les inspecteurs et les conseillers pédagogiques. Elles servent de référence stylistique et pratique : mimétisme de la démarche pédagogique, formatage institutionnel, styles d'animation et vocabulaire didactique validé. Elles n'établissent jamais la légalité d'un contenu.
+
+**Hiérarchie** : en cas de conflit, le Rulebook prime toujours sur le Gold Standard. Une fiche modèle qui contredit le Guide d'Exécution est écartée et signalée, même si elle est bien formatée.
+
+**Architecture de récupération et de prompt** :
+
+- **Étape A, Rulebook (filtre dur)** : récupération déterministe, et pas seulement sémantique, des extraits du Guide d'Exécution correspondant au niveau, à la classe, à la discipline et au code de compétence. Ces extraits sont injectés dans un bloc `[RULEBOOK]` présenté comme contraintes non négociables : compétence terminale, durée, prérequis, progression et situations d'apprentissage autorisées.
+- **Étape B, Gold Standard (few-shot)** : 1 à 3 fiches modèles validées, sélectionnées d'abord par métadonnées (niveau, classe, discipline, type de fiche), puis par similarité sur le thème. Elles sont injectées dans un bloc `[GOLD_STANDARD]` présenté uniquement comme exemples de style, de structure et de vocabulaire.
+- **Étape C, génération contrainte** : le LLM produit un `LessonPlan` typé. Le prompt impose que chaque élément de contenu soit justifié par une source du Rulebook, et que le style soit imité du Gold Standard. Le champ `sources` distingue les références de type `rulebook` et `gold_standard`.
+- **Étape D, validation à deux passes** : (a) contrôle Rulebook : durée totale conforme au Guide, compétence et objectifs issus du référentiel, prérequis et progression respectés, situations autorisées. (b) contrôle Gold Standard : structure des phases, vocabulaire didactique et formatage conformes aux fiches modèles. Un échec en (a) déclenche un réessai borné puis un refus motivé. Un échec en (b) seul déclenche une réécriture stylistique.
+- **Interdits** : ne jamais recopier mot pour mot une fiche modèle ; ne jamais utiliser une fiche modèle comme source de légalité ; ne jamais générer une fiche sans extraits Rulebook trouvés (échec explicite plutôt que génération libre).
+- **Versionnement** : chaque Guide d'Exécution et chaque fiche modèle porte une version et un statut de validation. Seules les sources au statut validé sont indexées pour la production.
+
 ### Stack technique
 
 | Couche | Technologie |
@@ -360,6 +378,24 @@ flowchart LR
 5. **Generation**: PydanticAI returns a typed `LessonPlan` (primary daily sheet or secondary lesson plan) through the RodiumAI proxy.
 6. **Validation**: Pydantic schema plus consistency checks (competency, objectives and assessment must agree), bounded retries.
 7. **Export**: DOCX / PDF rendering from the validated model.
+
+### Dual-anchor compliance rule: Rulebook and Few-Shot Gold Standard
+
+Every generated plan (lesson plan, daily sheet, or pedagogical execution guide), primary or secondary, MUST strictly and cumulatively conform to two anchors:
+
+1. **The official Guide d'Exécution Pédagogique: the "Rulebook"**. This is the legal and pedagogical constraint: strict regulatory framework, progression, terminal competencies, duration, prerequisites and learning situations. It defines what is mandatory and what is forbidden. No plan may depart from it.
+2. **The corpus of model reference sheets (fiches modèles étalons): the "Few-Shot Gold Standard"**. These are real sheets validated by inspectors and pedagogical advisers. They serve as the stylistic and practical reference: mimicry of the pedagogical approach, institutional formatting, animation styles and validated didactic vocabulary. They never establish whether a piece of content is legal.
+
+**Hierarchy**: in case of conflict, the Rulebook always overrides the Gold Standard. A model sheet that contradicts the Guide d'Exécution is discarded and flagged, even if well formatted.
+
+**Retrieval and prompt architecture**:
+
+- **Step A, Rulebook (hard filter)**: deterministic retrieval, not only semantic, of Guide d'Exécution excerpts matching level, class, discipline and competency code. These excerpts are injected in a `[RULEBOOK]` block presented as non-negotiable constraints: terminal competency, duration, prerequisites, progression and permitted learning situations.
+- **Step B, Gold Standard (few-shot)**: 1 to 3 validated model sheets, selected first by metadata (level, class, discipline, sheet type), then by topic similarity. They are injected in a `[GOLD_STANDARD]` block presented only as examples of style, structure and vocabulary.
+- **Step C, constrained generation**: the LLM returns a typed `LessonPlan`. The prompt requires every content element to be justified by a Rulebook source, and the style to be imitated from the Gold Standard. The `sources` field distinguishes `rulebook` and `gold_standard` references.
+- **Step D, two-pass validation**: (a) Rulebook check: total duration matches the Guide, competency and objectives come from the framework, prerequisites and progression are respected, situations are permitted. (b) Gold Standard check: phase structure, didactic vocabulary and formatting match the model sheets. A failure in (a) triggers bounded retries, then a reasoned refusal. A failure in (b) alone triggers a stylistic rewrite.
+- **Prohibitions**: never copy a model sheet word for word; never use a model sheet as a source of legality; never generate a plan without retrieved Rulebook excerpts (explicit failure rather than free generation).
+- **Versioning**: each Guide d'Exécution and each model sheet carries a version and a validation status. Only validated sources are indexed for generation.
 
 ### Tech stack
 
