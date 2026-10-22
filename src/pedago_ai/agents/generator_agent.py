@@ -11,7 +11,9 @@ SYSTEM_PROMPT = (
     "You are an expert pedagogue for Togolese secondary schools following the APC "
     "(Approche Par Competences) framework. Produce a complete lesson plan with operational "
     "pedagogical objectives, timed phases, professor and student activities, and evaluation "
-    "items. Use the provided curriculum context when available."
+    "items. Use the provided curriculum context when available. The request contains the "
+    "teacher's administrative information (teacher block); keep it unchanged and do not invent "
+    "any teacher, DRE, IESG or school details."
 )
 
 
@@ -33,4 +35,6 @@ async def generate_lesson_plan(request: LessonPlanRequest, feedback: list[str]) 
     if feedback:
         prompt += "\n\nFix these issues from the previous attempt:\n- " + "\n- ".join(feedback)
     result = await build_generator().run(prompt)
-    return result.output
+    plan = result.output
+    # The teacher's administrative block comes from the request, never from the model output.
+    return plan.model_copy(update={"teacher": request.teacher})
