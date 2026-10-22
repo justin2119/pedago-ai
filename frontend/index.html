@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#006A4E">
+  <meta name="description" content="Pedago-AI : génération de fiches APC pour les enseignants togolais.">
+  <title>Pedago-AI</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/icon.svg">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="offline-banner" class="offline-banner" role="status" hidden>
+    Mode hors ligne : les fiches déjà consultées restent disponibles.
+  </div>
+
+  <header class="app-header">
+    <div class="brand">
+      <span class="canton" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 2.5l2.9 6.3 6.8.7-5.1 4.6 1.5 6.7L12 17.3 5.9 20.8l1.5-6.7L2.3 9.5l6.8-.7z"/></svg></span>
+      <div>
+        <h1>Pedago-AI</h1>
+        <p class="tagline">Fiches APC pour Sciences Physiques</p>
+      </div>
+    </div>
+  </header>
+
+  <nav class="steps" aria-label="Étapes">
+    <button class="step-tab" data-step="1" type="button"><span>1</span> Profil</button>
+    <button class="step-tab" data-step="2" type="button"><span>2</span> Paramètres</button>
+    <button class="step-tab" data-step="3" type="button"><span>3</span> Génération</button>
+    <button class="step-tab" data-step="4" type="button"><span>4</span> Fiche</button>
+  </nav>
+
+  <main class="content">
+    <!-- Step 1: Teacher profile -->
+    <section class="panel" data-panel="1" aria-labelledby="h-profile">
+      <h2 id="h-profile">Profil administratif</h2>
+      <p class="hint">Ces informations sont enregistrées sur cet appareil.</p>
+      <form id="teacher-form" novalidate>
+        <div class="grid-2">
+          <label>Nom <input id="nom" name="nom" type="text" required autocomplete="family-name"></label>
+          <label>Prénom <input id="prenom" name="prenom" type="text" required autocomplete="given-name"></label>
+          <label>DRE
+            <select id="dre" name="dre" required></select>
+          </label>
+          <label>IESG <input id="iesg" name="iesg" type="text" required></label>
+          <label>Établissement <input id="etablissement" name="etablissement" type="text" required></label>
+          <label>Numéro de téléphone <input id="telephone" name="telephone" type="tel" inputmode="tel" autocomplete="tel" placeholder="+228 90 00 00 00"></label>
+        </div>
+        <p class="error" id="teacher-error" role="alert"></p>
+        <div class="actions">
+          <span></span>
+          <button type="submit" class="btn btn-primary">Enregistrer et continuer</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- Step 2: Fiche parameters -->
+    <section class="panel" data-panel="2" aria-labelledby="h-params" hidden>
+      <h2 id="h-params">Paramètres de la fiche</h2>
+      <form id="params-form" novalidate>
+        <div class="grid-2">
+          <label>Discipline
+            <select id="discipline" name="discipline"><option value="Sciences Physiques">Sciences Physiques</option></select>
+          </label>
+          <label>Classe
+            <select id="classe" name="classe" required>
+              <option value="2nde">2nde</option>
+              <option value="1ère">1ère</option>
+              <option value="Tle">Tle</option>
+            </select>
+          </label>
+          <label>Série
+            <select id="serie" name="serie" required>
+              <option value="A4">A4</option>
+              <option value="C">C</option>
+              <option value="D">D</option>
+              <option value="CD">CD</option>
+            </select>
+          </label>
+          <label>Durée (minutes)
+            <input id="duree" name="duree" type="number" min="15" max="240" step="5" value="55" required>
+          </label>
+          <label class="span-2">Thème / Chapitre
+            <input id="theme" name="theme" type="text" required placeholder="Ex. Les acides et les bases">
+          </label>
+          <label class="span-2">Compétence
+            <textarea id="competence" name="competence" rows="3" required placeholder="Ex. Identifier les propriétés acido-basiques d'une solution"></textarea>
+          </label>
+        </div>
+        <p class="error" id="params-error" role="alert"></p>
+        <div class="actions">
+          <button type="button" class="btn btn-ghost" data-go="1">Retour</button>
+          <button type="submit" class="btn btn-primary">Continuer</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- Step 3: Generation -->
+    <section class="panel" data-panel="3" aria-labelledby="h-gen" hidden>
+      <h2 id="h-gen">Génération</h2>
+      <p class="hint" id="gen-summary"></p>
+      <ol class="pipeline" id="pipeline" aria-live="polite"></ol>
+      <p class="notice" id="gen-notice" hidden></p>
+      <div class="actions">
+        <button type="button" class="btn btn-ghost" data-go="2">Modifier</button>
+        <button type="button" id="generate-btn" class="btn btn-cta">Générer la fiche</button>
+      </div>
+    </section>
+
+    <!-- Step 4: Live view & export -->
+    <section class="panel" data-panel="4" aria-labelledby="h-fiche" hidden>
+      <h2 id="h-fiche">Fiche APC</h2>
+      <div id="fiche-meta" class="meta"></div>
+      <div class="table-wrap">
+        <table class="apc-table" id="fiche-table">
+          <thead>
+            <tr><th>Phase</th><th>Durée</th><th>Activités de l'enseignant</th><th>Activités des élèves</th><th>Supports</th></tr>
+          </thead>
+          <tbody id="fiche-body"></tbody>
+        </table>
+      </div>
+      <p class="notice" id="fiche-notice" hidden></p>
+      <div class="actions">
+        <button type="button" class="btn btn-ghost" data-go="3">Régénérer</button>
+        <button type="button" id="export-btn" class="btn btn-primary">Télécharger en DOCX</button>
+      </div>
+    </section>
+  </main>
+
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
+  <script src="js/app.js" defer></script>
+</body>
+</html>
