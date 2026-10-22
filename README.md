@@ -1,7 +1,7 @@
 # pedago-ai
 
-> Générateur de fiches de préparation et de guides d'exécution pédagogique assisté par IA (RAG), aligné sur l'Approche Par Compétences (APC), couvrant l'**Enseignement Primaire** (CP1 à CM2) et l'**Enseignement Secondaire** (Collège & Lycée).
-> AI-assisted pedagogical lesson plan generator (RAG), aligned with the Competency-Based Approach (APC), covering **Primary School** (CP1 to CM2) and **Secondary School** (Collège & Lycée).
+> Générateur de fiches de préparation et de guides d'exécution pédagogique assisté par IA (RAG), aligné sur l'Approche Par Compétences (APC), dédié à l'**Enseignement Secondaire** : **Collège** (Secondaire 1) et **Lycée** (Secondaire 2).
+> AI-assisted pedagogical lesson plan generator (RAG), aligned with the Competency-Based Approach (APC), dedicated to **Secondary School**: **Collège** (Secondaire 1) and **Lycée** (Secondaire 2).
 
 [![Status](https://img.shields.io/badge/status-in%20design-orange)](#feuille-de-route--roadmap)
 [![License](https://img.shields.io/badge/license-TBD-lightgrey)](#licence--license)
@@ -19,54 +19,41 @@
 
 ## Présentation
 
-**pedago-ai** est une plateforme SaaS qui aide les enseignants de l'**enseignement primaire** et de l'**enseignement secondaire**, en particulier en Afrique de l'Ouest (Togo en premier lieu), à produire rapidement des **fiches de préparation de leçon** et des **guides d'exécution pédagogique** conformes à l'**APC (Approche Par Compétences)**.
+**pedago-ai** est une plateforme SaaS qui aide les enseignants de l'**enseignement secondaire** (Collège et Lycée), en particulier en Afrique de l'Ouest (Togo en premier lieu), à produire rapidement des **fiches de préparation de leçon** et des **guides d'exécution pédagogique** conformes à l'**APC (Approche Par Compétences)**.
 
-Le primaire est un **niveau de première classe** dans pedago-ai, au même titre que le secondaire : il dispose de ses propres référentiels, de ses propres formats de fiches et de ses propres exemples de référence.
+Le générateur est **exclusivement dédié au secondaire**. Il ne couvre pas l'enseignement primaire.
 
 | Niveau | Classes couvertes | Cycle |
 |---|---|---|
-| **Enseignement Primaire** | CP1, CP2 (Cours Préparatoire), CE1, CE2 (Cours Élémentaire), CM1, CM2 (Cours Moyen) | Cycle primaire |
-| **Enseignement Secondaire** | Collège (6e à 3e), Lycée (2nde à Terminale) | Collège & Lycée |
+| **Secondaire 1 (Collège)** | 6ème, 5ème, 4ème, 3ème | Premier cycle du secondaire |
+| **Secondaire 2 (Lycée)** | 2nde, 1ère, Terminale (séries A, C, D, etc.) | Second cycle du secondaire |
 
 Le système s'appuie sur une architecture **RAG (Retrieval-Augmented Generation)** :
 
-- les **programmes officiels** et référentiels de compétences (primaire comme secondaire) sont indexés et recherchés sémantiquement ;
+- les **programmes officiels** et référentiels de compétences du secondaire sont indexés et recherchés sémantiquement ;
 - des **fiches pédagogiques de référence** (few-shot) servent d'exemples de structure, de ton et de niveau ;
 - un **LLM** (accédé via un proxy **RodiumAI**) génère une fiche structurée, validée par schéma, puis exportée en **DOCX** et **PDF**.
 
-### Enseignement primaire : fonctionnalités dédiées
-
-Le primaire est pleinement pris en charge, avec les supports officiels suivants :
-
-- **Guides du maître** (Guides du maître CP1 à CM2) : progressions, démarches et consignes officielles.
-- **Manuels officiels du primaire** : textes, supports et activités de référence par discipline (lecture, écriture, mathématiques, éveil, etc.).
-- **Approches APC au primaire** : situations de vie, familles de situations et compétences de fin de cycle déclinées par classe.
-- **Fiches journalières / fiches de préparation pour instituteurs** : format de fiche journalière (date, classe, discipline, compétence, objectif, étapes, évaluation) adapté à la pratique de classe du primaire.
-- **Gestion de classe multigrade et effectifs importants** : consignes de différenciation, travail en groupes et temps d'activité courts adaptés aux jeunes élèves.
-
 ### Fonctionnalités clés
 
-- Génération de **fiches de préparation** et de **fiches journalières** pour le primaire (CP1 à CM2) et le secondaire (Collège & Lycée).
-- Génération de **guides d'exécution pédagogique** (séquences, consignes, gestion du temps, différenciation), pour chaque niveau.
-- Alignement explicite sur les **compétences, situations de vie et savoirs** de l'APC, avec des référentiels primaire et secondaire distincts.
-- Modularité **primaire / secondaire** : niveaux, classes, disciplines et référentiels configurables.
+- Génération de **fiches de préparation** pour le Collège (6ème à 3ème) et le Lycée (2nde à Terminale).
+- Génération de **guides d'exécution pédagogique** (séquences, consignes, gestion du temps, différenciation) pour chaque classe.
+- Alignement explicite sur les **compétences, situations de vie et savoirs** de l'APC, avec un référentiel distinct pour le Collège et pour le Lycée.
+- Prise en compte des **séries du Lycée** (A, C, D, etc.) et des disciplines propres à chaque classe.
 - Conformité **IESG** et paramétrage national (Togo et au-delà) via des profils de référentiel par niveau.
-- Export **DOCX** et **PDF** avec mise en page institutionnelle (fiche journalière primaire ou fiche de préparation secondaire).
-- Espace enseignant (compte, bibliothèque de fiches par niveau, historique de versions).
-- Architecture multi-tenant prête pour une offre SaaS (écoles primaires, collèges, lycées, réseaux, formateurs).
+- Export **DOCX** et **PDF** avec mise en page institutionnelle (fiche de préparation du secondaire).
+- Espace enseignant (compte, bibliothèque de fiches par classe, historique de versions).
+- Architecture multi-tenant prête pour une offre SaaS (collèges, lycées, réseaux, formateurs).
 
 ## Architecture
 
 ```mermaid
 flowchart LR
-    U[Enseignant primaire ou secondaire / Web App] -->|HTTPS| API[FastAPI]
+    U[Enseignant du secondaire / Web App] -->|HTTPS| API[FastAPI]
     API --> AUTH[Supabase Auth]
     API --> AG[PydanticAI Agent]
-    AG --> ROUTE{Niveau}
-    ROUTE -->|Primaire CP1-CM2| RETP[Retriever RAG Primaire]
-    ROUTE -->|Secondaire 6e-Terminale| RETS[Retriever RAG Secondaire]
-    RETP --> PG[(Supabase Postgres + pgvector)]
-    RETS --> PG
+    AG --> RET[Retriever RAG Secondaire]
+    RET --> PG[(Supabase Postgres + pgvector)]
     AG --> PROXY[RodiumAI LLM Proxy]
     PROXY --> LLM[(Modèles LLM)]
     AG --> VAL[Validation Pydantic]
@@ -77,29 +64,29 @@ flowchart LR
 
 ### Pipeline RAG
 
-1. **Ingestion** : parsing des programmes, guides du maître, manuels officiels du primaire, référentiels APC et fiches de référence (PDF, DOCX), découpage par niveau / classe / compétence / situation / section.
-2. **Embeddings** : vectorisation des chunks et stockage dans `pgvector`, avec métadonnées (niveau `primaire` ou `secondaire`, classe, discipline, référentiel, pays, version).
-3. **Récupération** : recherche hybride (similarité vectorielle + filtres métadonnées, dont le niveau) sur le référentiel ciblé.
-4. **Few-shot** : sélection de 1 à 3 fiches de référence proches (même niveau, même classe ou cycle, même discipline) injectées dans le prompt.
-5. **Génération** : PydanticAI produit un objet typé `LessonPlan` (fiche de préparation ou fiche journalière primaire) via le proxy RodiumAI.
+1. **Ingestion** : parsing des programmes, référentiels APC et fiches de référence du secondaire (PDF, DOCX), découpage par classe / série / compétence / situation / section.
+2. **Embeddings** : vectorisation des chunks et stockage dans `pgvector`, avec métadonnées (niveau `secondaire`, classe, série, discipline, référentiel, pays, version).
+3. **Récupération** : recherche hybride (similarité vectorielle + filtres métadonnées, dont la classe) sur le référentiel ciblé.
+4. **Few-shot** : sélection de 1 à 3 fiches de référence proches (même classe ou cycle, même discipline) injectées dans le prompt.
+5. **Génération** : PydanticAI produit un objet typé `LessonPlan` (fiche de préparation) via le proxy RodiumAI.
 6. **Validation** : schéma Pydantic, contrôle de cohérence (compétence ↔ objectifs ↔ évaluation), réessai borné.
 7. **Export** : rendu DOCX / PDF à partir du modèle validé.
 
-### Règle de conformité à double ancrage : Rulebook et Few-Shot Gold Standard
+### Règle de conformité à double ancrage réglementaire et didactique : Rulebook et Few-Shot Gold Standard
 
-Toute fiche générée (fiche de préparation, fiche journalière, guide d'exécution pédagogique), primaire ou secondaire, DOIT se conformer strictement et cumulativement à deux ancrages :
+Toute fiche générée (fiche de préparation ou guide d'exécution pédagogique) du secondaire DOIT se conformer strictement et cumulativement à deux ancrages :
 
-1. **Le Guide d'Exécution Pédagogique officiel : le « Rulebook »**. C'est la contrainte légale et pédagogique : cadre réglementaire strict, progression, compétences terminales, durée, prérequis et situations d'apprentissage. Il définit ce qui est obligatoire et ce qui est interdit. Aucune fiche ne peut s'en écarter.
-2. **Le corpus de fiches modèles étalons : le « Few-Shot Gold Standard »**. Ce sont les fiches réelles validées par les inspecteurs et les conseillers pédagogiques. Elles servent de référence stylistique et pratique : mimétisme de la démarche pédagogique, formatage institutionnel, styles d'animation et vocabulaire didactique validé. Elles n'établissent jamais la légalité d'un contenu.
+1. **Ancrage 1, le Guide d'Exécution Pédagogique officiel : le « Rulebook »**. C'est la norme légale et pédagogique : cadre réglementaire strict, programmes officiels, APC, compétences terminales, progressions annuelles, durée, prérequis et situations d'apprentissage imposées par le ministère. Il définit ce qui est obligatoire et ce qui est interdit. Aucune fiche ne peut s'en écarter.
+2. **Ancrage 2, le corpus de fiches modèles étalons : le « Few-Shot Gold Standard »**. Ce sont les fiches réelles validées par les conseillers pédagogiques et les inspecteurs IESG. Elles dictent la structure exacte, le style didactique, la formulation des objectifs pédagogiques opérationnels (OPO), et le découpage des activités enseignant / apprenant. Elles n'établissent jamais la légalité d'un contenu.
 
 **Hiérarchie** : en cas de conflit, le Rulebook prime toujours sur le Gold Standard. Une fiche modèle qui contredit le Guide d'Exécution est écartée et signalée, même si elle est bien formatée.
 
 **Architecture de récupération et de prompt** :
 
-- **Étape A, Rulebook (filtre dur)** : récupération déterministe, et pas seulement sémantique, des extraits du Guide d'Exécution correspondant au niveau, à la classe, à la discipline et au code de compétence. Ces extraits sont injectés dans un bloc `[RULEBOOK]` présenté comme contraintes non négociables : compétence terminale, durée, prérequis, progression et situations d'apprentissage autorisées.
-- **Étape B, Gold Standard (few-shot)** : 1 à 3 fiches modèles validées, sélectionnées d'abord par métadonnées (niveau, classe, discipline, type de fiche), puis par similarité sur le thème. Elles sont injectées dans un bloc `[GOLD_STANDARD]` présenté uniquement comme exemples de style, de structure et de vocabulaire.
+- **Étape A, Rulebook (filtre dur)** : récupération déterministe, et pas seulement sémantique, des extraits du Guide d'Exécution correspondant à la classe, à la série (le cas échéant), à la discipline et au code de compétence. Ces extraits sont injectés dans un bloc `[RULEBOOK]` présenté comme contraintes non négociables : compétence terminale, durée, prérequis, progression et situations d'apprentissage autorisées.
+- **Étape B, Gold Standard (few-shot)** : 1 à 3 fiches modèles validées, sélectionnées d'abord par métadonnées (classe, série, discipline, type de fiche), puis par similarité sur le thème. Elles sont injectées dans un bloc `[GOLD_STANDARD]` présenté uniquement comme exemples de style, de structure et de vocabulaire.
 - **Étape C, génération contrainte** : le LLM produit un `LessonPlan` typé. Le prompt impose que chaque élément de contenu soit justifié par une source du Rulebook, et que le style soit imité du Gold Standard. Le champ `sources` distingue les références de type `rulebook` et `gold_standard`.
-- **Étape D, validation à deux passes** : (a) contrôle Rulebook : durée totale conforme au Guide, compétence et objectifs issus du référentiel, prérequis et progression respectés, situations autorisées. (b) contrôle Gold Standard : structure des phases, vocabulaire didactique et formatage conformes aux fiches modèles. Un échec en (a) déclenche un réessai borné puis un refus motivé. Un échec en (b) seul déclenche une réécriture stylistique.
+- **Étape D, validation à deux passes** : (a) contrôle Rulebook : durée totale conforme au Guide, compétence et objectifs issus du référentiel, prérequis et progression respectés, situations autorisées. (b) contrôle Gold Standard : structure des phases, formulation des OPO, vocabulaire didactique et formatage conformes aux fiches modèles. Un échec en (a) déclenche un réessai borné puis un refus motivé. Un échec en (b) seul déclenche une réécriture stylistique.
 - **Interdits** : ne jamais recopier mot pour mot une fiche modèle ; ne jamais utiliser une fiche modèle comme source de légalité ; ne jamais générer une fiche sans extraits Rulebook trouvés (échec explicite plutôt que génération libre).
 - **Versionnement** : chaque Guide d'Exécution et chaque fiche modèle porte une version et un statut de validation. Seules les sources au statut validé sont indexées pour la production.
 
@@ -124,24 +111,22 @@ Toute fiche générée (fiche de préparation, fiche journalière, guide d'exéc
 pedago-ai/
 ├── apps/
 │   ├── api/                  # FastAPI : routes, dépendances, configuration
-│   └── web/                  # Interface enseignant (primaire et secondaire)
+│   └── web/                  # Interface enseignant (secondaire)
 ├── packages/
-│   ├── core/                 # Domaine : LessonPlan, DailyPlanPrimaire, Competency, Level, Cycle, Classe...
-│   ├── rag/                  # Ingestion, chunking, embeddings, retrieval (filtre niveau)
-│   ├── agents/               # Agents PydanticAI et prompts versionnés (primaire / secondaire)
+│   ├── core/                 # Domaine : LessonPlan, Competency, Cycle, Classe, Serie...
+│   ├── rag/                  # Ingestion, chunking, embeddings, retrieval (filtre classe)
+│   ├── agents/               # Agents PydanticAI et prompts versionnés (secondaire)
 │   ├── llm/                  # Client RodiumAI (proxy) et abstraction modèle
-│   └── export/               # Rendu DOCX / PDF (fiche journalière et fiche de préparation)
+│   └── export/               # Rendu DOCX / PDF (fiche de préparation)
 ├── data/
 │   ├── referentiels/
-│   │   ├── primaire/         # Programmes, guides du maître, manuels officiels, APC CP1-CM2
-│   │   └── secondaire/       # Référentiels APC Collège & Lycée
+│   │   └── secondaire/       # Programmes, guides d'exécution, référentiels APC Collège & Lycée
 │   └── fiches_reference/
-│       ├── primaire/         # Fiches journalières et fiches de préparation CP1-CM2 validées
 │       └── secondaire/       # Fiches de préparation Collège & Lycée validées
 ├── supabase/
 │   ├── migrations/           # Schéma SQL, pgvector, RLS
 │   └── seed/
-├── docs/                     # Architecture, ADR, guides (dont guide primaire)
+├── docs/                     # Architecture, ADR, guides
 ├── tests/
 ├── .github/workflows/        # CI
 ├── .env.example
@@ -181,53 +166,53 @@ uv run uvicorn apps.api.main:app --reload
 | `RODIUM_MODEL` | Modèle par défaut |
 | `EMBEDDING_MODEL` | Modèle d'embeddings |
 | `DEFAULT_COUNTRY` | Pays de référentiel par défaut (ex. `TG`) |
-| `DEFAULT_LEVEL` | Niveau par défaut : `primaire` ou `secondaire` |
+| `DEFAULT_LEVEL` | Niveau par défaut : `secondaire` |
 | `APP_ENV` | `dev`, `staging`, `prod` |
 
 ## API (aperçu)
 
-Toutes les routes sont préfixées par `/api/v1` et protégées par un jeton Supabase (`Authorization: Bearer <jwt>`). Le paramètre `level` accepte `primaire` ou `secondaire`.
+Toutes les routes sont préfixées par `/api/v1` et protégées par un jeton Supabase (`Authorization: Bearer <jwt>`). Le paramètre `level` accepte uniquement `secondaire`.
 
 | Méthode | Route | Description |
 |---|---|---|
-| `POST` | `/lesson-plans` | Génère une fiche de préparation (secondaire) ou une fiche journalière (primaire) |
-| `POST` | `/execution-guides` | Génère un guide d'exécution pédagogique (primaire ou secondaire) |
+| `POST` | `/lesson-plans` | Génère une fiche de préparation (Collège ou Lycée) |
+| `POST` | `/execution-guides` | Génère un guide d'exécution pédagogique (Collège ou Lycée) |
 | `GET` | `/lesson-plans/{id}` | Récupère une fiche |
 | `PATCH` | `/lesson-plans/{id}` | Modifie une fiche (nouvelle version) |
 | `GET` | `/lesson-plans/{id}/export?format=docx\|pdf` | Exporte la fiche |
-| `GET` | `/referentiels?country=TG&level=primaire` | Liste les référentiels (guides du maître, manuels, APC) du primaire |
-| `GET` | `/referentiels?country=TG&level=secondaire` | Liste les référentiels du secondaire |
-| `GET` | `/reference-sheets?level=primaire&classe=CE1` | Liste les fiches de référence d'une classe primaire |
+| `GET` | `/referentiels?country=TG&level=secondaire` | Liste les référentiels du secondaire (programmes, guides d'exécution, APC) |
+| `GET` | `/reference-sheets?level=secondaire&classe=2nde` | Liste les fiches de référence d'une classe du secondaire |
 | `POST` | `/admin/ingest` | Ingestion d'un référentiel (rôle admin) |
 
-### Exemple de requête : primaire (CE1)
-
-```json
-POST /api/v1/lesson-plans
-{
-  "country": "TG",
-  "level": "primaire",
-  "class": "CE1",
-  "discipline": "Mathématiques",
-  "competency_code": "<code tiré du référentiel primaire>",
-  "topic": "Les nombres jusqu'à 100",
-  "duration_minutes": 45,
-  "format": "fiche_journaliere",
-  "language": "fr"
-}
-```
-
-### Exemple de requête : secondaire (6e)
+### Exemple de requête : Collège (6ème)
 
 ```json
 POST /api/v1/lesson-plans
 {
   "country": "TG",
   "level": "secondaire",
-  "class": "6e",
+  "class": "6ème",
   "discipline": "Mathématiques",
-  "competency_code": "<code tiré du référentiel secondaire>",
+  "competency_code": "<code tiré du référentiel du Collège>",
   "topic": "Les fractions",
+  "duration_minutes": 55,
+  "format": "fiche_preparation",
+  "language": "fr"
+}
+```
+
+### Exemple de requête : Lycée (2nde, série C)
+
+```json
+POST /api/v1/lesson-plans
+{
+  "country": "TG",
+  "level": "secondaire",
+  "class": "2nde",
+  "serie": "C",
+  "discipline": "Physique-Chimie",
+  "competency_code": "<code tiré du référentiel du Lycée>",
+  "topic": "<thème du programme>",
   "duration_minutes": 55,
   "format": "fiche_preparation",
   "language": "fr"
@@ -238,70 +223,64 @@ POST /api/v1/lesson-plans
 
 ```python
 class Level(str, Enum):
-    PRIMAIRE = "primaire"       # CP1, CP2, CE1, CE2, CM1, CM2
-    SECONDAIRE = "secondaire"   # Collège (6e-3e), Lycée (2nde-Terminale)
+    SECONDAIRE = "secondaire"     # Secondaire 1 (Collège : 6ème, 5ème, 4ème, 3ème) et Secondaire 2 (Lycée : 2nde, 1ère, Terminale)
 
-class PrimaryClass(str, Enum):
-    CP1 = "CP1"  # Cours Préparatoire 1re année
-    CP2 = "CP2"  # Cours Préparatoire 2e année
-    CE1 = "CE1"  # Cours Élémentaire 1re année
-    CE2 = "CE2"  # Cours Élémentaire 2e année
-    CM1 = "CM1"  # Cours Moyen 1re année
-    CM2 = "CM2"  # Cours Moyen 2e année
+class Classe(str, Enum):
+    SIXIEME = "6ème"
+    CINQUIEME = "5ème"
+    QUATRIEME = "4ème"
+    TROISIEME = "3ème"
+    SECONDE = "2nde"
+    PREMIERE = "1ère"
+    TERMINALE = "Tle"
 
 class LessonPlan(BaseModel):
     title: str
-    level: Level                   # primaire ou secondaire, premier champ discriminant
-    class_: PrimaryClass | str     # CP1-CM2 pour le primaire, 6e-Terminale pour le secondaire
+    level: Level                   # toujours "secondaire"
+    classe: Classe
+    serie: str | None             # séries du Lycée (A, C, D, etc.), None pour le Collège
     discipline: str
     competency_code: str
-    objectives: list[LearningObjective]
+    objectives: list[LearningObjective]   # OPO formulés selon les fiches modèles étalons
     prerequisites: list[str]
     materials: list[str]
     phases: list[LessonPhase]      # introduction, développement, synthèse, évaluation
     assessment: AssessmentCriteria
-    sources: list[SourceRef]       # traçabilité RAG (guide du maître, manuel officiel, programme)
-
-class DailyPlanPrimaire(LessonPlan):
-    """Fiche journalière pour instituteur (CP1-CM2)."""
-    date: date
-    cycle: Literal["CP", "CE", "CM"]
-    activite_type: str             # ex. lecture, dictée, calcul, éveil
-    consignes_eleves: list[str]    # consignes simples, adaptées à l'âge
+    sources: list[SourceRef]       # traçabilité : rulebook (guide d'exécution) et gold_standard (fiche modèle)
 ```
 
 ## Modèle de données (aperçu)
 
-- `countries`, `levels` (`primaire`, `secondaire`), `classes` (CP1 à CM2, 6e à Terminale)
+- `countries`, `levels` (`secondaire`), `classes` (6ème à Terminale), `series` (A, C, D, etc., Lycée)
 - `referentials` (pays, niveau, version, IESG / profil national)
-- `competencies`, `situations`, `knowledge_items` (hiérarchie APC, par niveau)
-- `primary_sources` (programmes, guides du maître, manuels officiels du primaire, métadonnées : classe, discipline, année, éditeur)
+- `competencies`, `situations`, `knowledge_items` (hiérarchie APC, par classe)
+- `primary_sources` (programmes, guides d'exécution, métadonnées : classe, série, discipline, année, éditeur)
 - `document_chunks` (`embedding vector(...)`, métadonnées dont `level` et `class`, index HNSW)
-- `reference_sheets` (fiches few-shot validées, `level`, `class`, `format` : fiche_journaliere | fiche_preparation)
-- `lesson_plans` (`level`, `class`, `format`), `lesson_plan_versions`, `exports`
+- `reference_sheets` (fiches few-shot validées, `level`, `class`, `serie`, `format` : fiche_preparation)
+- `lesson_plans` (`level`, `class`, `serie`, `format`), `lesson_plan_versions`, `exports`
 - `organizations`, `memberships` (multi-tenant, RLS Supabase)
 
 ## Qualité, sécurité et conformité
 
 - Row Level Security activée sur toutes les tables utilisateur.
-- Aucune donnée personnelle d'élève n'est requise ; minimisation des données (y compris pour les élèves du primaire).
+- Aucune donnée personnelle d'élève n'est requise ; minimisation des données.
 - Clés API uniquement côté serveur ; secrets gérés par variables d'environnement.
 - Journalisation des appels LLM (sans contenu sensible) pour audit et coûts.
-- Contrôle humain : chaque fiche générée, primaire ou secondaire, est éditable et doit être validée par l'enseignant.
-- Tests : unitaires (schémas, chunking, cohérence primaire / secondaire), intégration (RAG, export), évaluation de qualité des fiches (grille de relecture par niveau).
+- Contrôle humain : chaque fiche générée est éditable et doit être validée par l'enseignant.
+- Tests : unitaires (schémas, chunking, cohérence des classes et séries), intégration (RAG, export), évaluation de qualité des fiches (grille de relecture par classe).
 
 ## Feuille de route / Roadmap
 
-- **Phase 0 : Fondations** : dépôt, CI, schéma Supabase (avec niveaux et classes), ingestion d'un premier référentiel.
-- **Phase 1 : MVP** : génération de fiches de préparation pour le **primaire (CP1-CM2, fiches journalières)** et le **secondaire** (une discipline), export DOCX / PDF.
-- **Phase 2 : Guides d'exécution** et bibliothèque de fiches de référence, primaire et secondaire.
-- **Phase 3 : Consolidation primaire / secondaire**, profils IESG par niveau, guides du maître et manuels officiels du primaire complets, paramétrage multi-pays.
-- **Phase 4 : SaaS** : comptes écoles primaires et établissements secondaires, facturation, quotas, tableau de bord.
-- **Phase 5 : Qualité** : boucle de retour enseignants (primaire et secondaire), évaluation automatique des fiches.
+- **Phase 0 : Fondations** : dépôt, CI, schéma Supabase (classes et séries), ingestion d'un premier référentiel du Collège.
+- **Phase 1 : MVP** : génération de fiches de préparation pour le **Collège (6ème à 3ème)** et une discipline, export DOCX / PDF.
+- **Phase 2 : Lycée et guides d'exécution** : 2nde, 1ère, Terminale (séries A, C, D, etc.), guides d'exécution pédagogique et bibliothèque de fiches de référence.
+- **Phase 3 : Consolidation**, profils IESG, guides d'exécution et référentiels complets du Collège et du Lycée, paramétrage multi-pays.
+- **Phase 4 : SaaS** : comptes établissements secondaires (collèges, lycées), facturation, quotas, tableau de bord.
+- **Phase 5 : Qualité** : boucle de retour enseignants, évaluation automatique des fiches.
 
 ## Contribuer
 
-Les contributions sont bienvenues : ouvrez d'abord une issue pour discuter d'un changement majeur. Respectez les conventions de commit (Conventional Commits) et lancez `uv run pytest` et `uv run ruff check` avant chaque pull request. Les contributions de référentiels primaires (guides du maître, fiches journalières validées) sont particulièrement bienvenues.
+Les contributions sont bienvenues : ouvrez d'abord une issue pour discuter d'un changement majeur. Respectez les conventions de commit (Conventional Commits) et lancez `uv run pytest` et `uv run ruff check` avant chaque pull request. Les contributions de référentiels du secondaire (guides d'exécution, fiches modèles étalons validées) sont particulièrement bienvenues.
 
 ## Licence / License
 
@@ -313,233 +292,85 @@ Licence à définir par le titulaire du dépôt. Tant qu'aucune licence n'est pu
 
 ## Overview
 
-**pedago-ai** is a SaaS platform that helps **primary school** and **secondary school** teachers, especially in West Africa (starting with Togo), produce **lesson plans** and **pedagogical execution guides** aligned with the **APC (Competency-Based Approach)**.
+**pedago-ai** is a SaaS platform that helps **secondary school** teachers (Collège and Lycée), especially in West Africa (starting with Togo), produce **lesson plans** and **pedagogical execution guides** aligned with the **APC (Competency-Based Approach)**.
 
-Primary school is a **first-class level** in pedago-ai, on equal footing with secondary: it has its own frameworks, its own lesson-plan formats and its own reference examples.
+The generator is **exclusively dedicated to secondary school**. It does not cover primary school.
 
 | Level | Classes covered | Cycle |
 |---|---|---|
-| **Primary School (Enseignement Primaire)** | CP1, CP2 (Cours Préparatoire), CE1, CE2 (Cours Élémentaire), CM1, CM2 (Cours Moyen) | Primary cycle |
-| **Secondary School (Enseignement Secondaire)** | Collège (6e to 3e), Lycée (2nde to Terminale) | Collège & Lycée |
+| **Secondaire 1 (Collège)** | 6ème, 5ème, 4ème, 3ème | First secondary cycle |
+| **Secondaire 2 (Lycée)** | 2nde, 1ère, Terminale (series A, C, D, etc.) | Second secondary cycle |
 
 The system is built on **Retrieval-Augmented Generation (RAG)**:
 
-- official curricula and competency frameworks (primary and secondary) are indexed and searched semantically;
+- official curricula and secondary competency frameworks are indexed and searched semantically;
 - **few-shot reference sheets** provide structure, tone and level examples;
 - an **LLM** (accessed through a **RodiumAI** proxy) generates a schema-validated plan, exported to **DOCX** and **PDF**.
 
-### Primary school: dedicated support
-
-Primary is fully supported, with these official resources:
-
-- **Guides du maître** (teacher's guides, CP1 to CM2): progressions, methods and official instructions.
-- **Official primary textbooks** (manuels officiels du primaire): texts, materials and reference activities by subject (reading, writing, mathematics, awakening/éveil, etc.).
-- **APC approaches at primary level**: life situations, situation families and end-of-cycle competencies broken down by class.
-- **Fiches journalières / fiches de préparation for instituteurs**: daily lesson sheets (date, class, subject, competency, objective, steps, assessment) matched to primary classroom practice.
-- **Multigrade classes and large class sizes**: differentiation instructions, group work and short activity blocks suited to young learners.
-
 ### Key features
 
-- Lesson plan and **daily sheet** generation for primary (CP1 to CM2) and secondary (Collège & Lycée).
-- Pedagogical **execution guides** (sequences, instructions, timing, differentiation) for every level.
-- Explicit alignment with APC **competencies, life situations and knowledge items**, with separate primary and secondary frameworks.
-- **Primary / secondary** modularity: configurable levels, classes, disciplines and frameworks.
+- Lesson plan generation for Collège (6ème to 3ème) and Lycée (2nde to Terminale).
+- Pedagogical **execution guides** (sequences, instructions, timing, differentiation) for every class.
+- Explicit alignment with APC **competencies, life situations and knowledge items**, with separate Collège and Lycée frameworks.
+- Support for **Lycée series** (A, C, D, etc.) and the subjects specific to each class.
 - **IESG** compliance and national configuration (Togo and beyond) through per-level framework profiles.
-- **DOCX** and **PDF** export with institutional layout (primary daily sheet or secondary lesson plan).
-- Teacher workspace (accounts, sheet library by level, version history).
-- Multi-tenant architecture ready for a SaaS offering (primary schools, collèges, lycées, networks, trainers).
+- **DOCX** and **PDF** export with institutional layout (secondary lesson plan).
+- Teacher workspace (accounts, sheet library by class, version history).
+- Multi-tenant architecture ready for a SaaS offering (collèges, lycées, networks, trainers).
 
-## Architecture
+### Dual-anchor compliance rule: Regulatory and Didactic Double Anchor (Rulebook and Few-Shot Gold Standard)
 
-```mermaid
-flowchart LR
-    U[Primary or secondary teacher / Web App] -->|HTTPS| API[FastAPI]
-    API --> AUTH[Supabase Auth]
-    API --> AG[PydanticAI Agent]
-    AG --> ROUTE{Level}
-    ROUTE -->|Primary CP1-CM2| RETP[Primary RAG Retriever]
-    ROUTE -->|Secondary 6e-Terminale| RETS[Secondary RAG Retriever]
-    RETP --> PG[(Supabase Postgres + pgvector)]
-    RETS --> PG
-    AG --> PROXY[RodiumAI LLM Proxy]
-    PROXY --> LLM[(LLM models)]
-    AG --> VAL[Pydantic validation]
-    VAL --> EXP[DOCX / PDF export]
-    EXP --> STO[(Supabase Storage)]
-    API --> PG
-```
+Every generated plan (lesson plan or pedagogical execution guide) MUST strictly and cumulatively conform to two anchors:
 
-### RAG pipeline
-
-1. **Ingestion**: parse curricula, teacher's guides, official primary textbooks, APC frameworks and reference sheets (PDF, DOCX), chunk by level / class / competency / situation / section.
-2. **Embeddings**: vectorize chunks into `pgvector` with metadata (level `primaire` or `secondaire`, class, discipline, framework, country, version).
-3. **Retrieval**: hybrid search (vector similarity + metadata filters, including level) on the target framework.
-4. **Few-shot**: select 1 to 3 close reference sheets (same level, class or cycle, and discipline) for the prompt.
-5. **Generation**: PydanticAI returns a typed `LessonPlan` (primary daily sheet or secondary lesson plan) through the RodiumAI proxy.
-6. **Validation**: Pydantic schema plus consistency checks (competency, objectives and assessment must agree), bounded retries.
-7. **Export**: DOCX / PDF rendering from the validated model.
-
-### Dual-anchor compliance rule: Rulebook and Few-Shot Gold Standard
-
-Every generated plan (lesson plan, daily sheet, or pedagogical execution guide), primary or secondary, MUST strictly and cumulatively conform to two anchors:
-
-1. **The official Guide d'Exécution Pédagogique: the "Rulebook"**. This is the legal and pedagogical constraint: strict regulatory framework, progression, terminal competencies, duration, prerequisites and learning situations. It defines what is mandatory and what is forbidden. No plan may depart from it.
-2. **The corpus of model reference sheets (fiches modèles étalons): the "Few-Shot Gold Standard"**. These are real sheets validated by inspectors and pedagogical advisers. They serve as the stylistic and practical reference: mimicry of the pedagogical approach, institutional formatting, animation styles and validated didactic vocabulary. They never establish whether a piece of content is legal.
+1. **Anchor 1, the official Guide d'Exécution Pédagogique: the "Rulebook"**. This is the legal and pedagogical norm: strict regulatory framework, official curricula, APC, terminal competencies, annual progressions, duration, prerequisites and learning situations imposed by the ministry. It defines what is mandatory and what is forbidden. No plan may depart from it.
+2. **Anchor 2, the corpus of model reference sheets (fiches modèles étalons): the "Few-Shot Gold Standard"**. These are real sheets validated by pedagogical advisers and IESG inspectors. They dictate the exact structure, the didactic style, the wording of learning objectives (OPO) and the split of teacher/learner activities. They never establish whether a piece of content is legal.
 
 **Hierarchy**: in case of conflict, the Rulebook always overrides the Gold Standard. A model sheet that contradicts the Guide d'Exécution is discarded and flagged, even if well formatted.
 
 **Retrieval and prompt architecture**:
 
-- **Step A, Rulebook (hard filter)**: deterministic retrieval, not only semantic, of Guide d'Exécution excerpts matching level, class, discipline and competency code. These excerpts are injected in a `[RULEBOOK]` block presented as non-negotiable constraints: terminal competency, duration, prerequisites, progression and permitted learning situations.
-- **Step B, Gold Standard (few-shot)**: 1 to 3 validated model sheets, selected first by metadata (level, class, discipline, sheet type), then by topic similarity. They are injected in a `[GOLD_STANDARD]` block presented only as examples of style, structure and vocabulary.
-- **Step C, constrained generation**: the LLM returns a typed `LessonPlan`. The prompt requires every content element to be justified by a Rulebook source, and the style to be imitated from the Gold Standard. The `sources` field distinguishes `rulebook` and `gold_standard` references.
-- **Step D, two-pass validation**: (a) Rulebook check: total duration matches the Guide, competency and objectives come from the framework, prerequisites and progression are respected, situations are permitted. (b) Gold Standard check: phase structure, didactic vocabulary and formatting match the model sheets. A failure in (a) triggers bounded retries, then a reasoned refusal. A failure in (b) alone triggers a stylistic rewrite.
-- **Prohibitions**: never copy a model sheet word for word; never use a model sheet as a source of legality; never generate a plan without retrieved Rulebook excerpts (explicit failure rather than free generation).
-- **Versioning**: each Guide d'Exécution and each model sheet carries a version and a validation status. Only validated sources are indexed for generation.
+- **Step A, Rulebook (hard filter)**: deterministic retrieval, not only semantic, of Guide d'Exécution excerpts matching class, series (where applicable), discipline and competency code. They are injected in a `[RULEBOOK]` block presented as non-negotiable constraints.
+- **Step B, Gold Standard (few-shot)**: 1 to 3 validated model sheets, selected first by metadata (class, series, discipline, sheet type), then by topic similarity. They are injected in a `[GOLD_STANDARD]` block presented only as examples of style, structure and vocabulary.
+- **Step C, constrained generation**: the LLM returns a typed `LessonPlan`. Every content element must be justified by a Rulebook source, and the style imitated from the Gold Standard. The `sources` field distinguishes `rulebook` and `gold_standard` references.
+- **Step D, two-pass validation**: (a) Rulebook check: total duration, competency and objectives, prerequisites, progression and permitted situations. (b) Gold Standard check: phase structure, OPO wording, didactic vocabulary and formatting. A failure in (a) triggers bounded retries, then a reasoned refusal. A failure in (b) alone triggers a stylistic rewrite.
+- **Prohibitions**: never copy a model sheet word for word; never use a model sheet as a source of legality; never generate a sheet without Rulebook excerpts (explicit failure rather than free generation).
+- **Versioning**: each Guide d'Exécution and each model sheet carries a version and a validation status. Only validated sources are indexed for production.
 
 ### Tech stack
 
 | Layer | Technology |
 |---|---|
 | API | FastAPI (Python 3.12+) |
-| Agents / structured output | PydanticAI |
+| Agents / structured outputs | PydanticAI |
 | Database & vectors | Supabase Postgres + pgvector |
-| Auth | Supabase Auth |
+| Authentication | Supabase Auth |
 | Files | Supabase Storage |
-| LLM | RodiumAI (proxy, swappable models) |
+| LLM | RodiumAI (proxy, interchangeable models) |
 | Export | python-docx, WeasyPrint or Typst (PDF) |
-| Frontend | Web app (TanStack Start / React recommended) |
+| Frontend | Web application (TanStack Start / React recommended) |
 | Quality | pytest, ruff, mypy, pre-commit |
 | CI/CD | GitHub Actions |
-
-## Planned repository layout
-
-See the French section above for the directory tree. Primary resources live under `data/referentiels/primaire/` and `data/fiches_reference/primaire/`.
 
 ## Quick start
 
 ```bash
 git clone https://github.com/justin2119/pedago-ai.git
 cd pedago-ai
-cp .env.example .env
-uv sync
+cp .env.example .env          # fill in the variables
+uv sync                       # Python dependencies
 uv run pre-commit install
 uv run uvicorn apps.api.main:app --reload
 ```
 
-Required environment variables: `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_DB_URL`, `RODIUM_API_KEY`, `RODIUM_BASE_URL`, `RODIUM_MODEL`, `EMBEDDING_MODEL`, `DEFAULT_COUNTRY`, `DEFAULT_LEVEL` (`primaire` or `secondaire`), `APP_ENV`.
-
-## API (overview)
-
-Routes are prefixed with `/api/v1` and protected by a Supabase JWT (`Authorization: Bearer <jwt>`). The `level` parameter accepts `primaire` or `secondaire`.
-
-| Method | Route | Description |
-|---|---|---|
-| `POST` | `/lesson-plans` | Generate a lesson plan (secondary) or a daily sheet (primary) |
-| `POST` | `/execution-guides` | Generate a pedagogical execution guide (primary or secondary) |
-| `GET` | `/lesson-plans/{id}` | Fetch a plan |
-| `PATCH` | `/lesson-plans/{id}` | Edit a plan (new version) |
-| `GET` | `/lesson-plans/{id}/export?format=docx\|pdf` | Export a plan |
-| `GET` | `/referentiels?country=TG&level=primaire` | List primary frameworks (teacher's guides, textbooks, APC) |
-| `GET` | `/referentiels?country=TG&level=secondaire` | List secondary frameworks |
-| `GET` | `/reference-sheets?level=primaire&class=CE1` | List reference sheets for a primary class |
-| `POST` | `/admin/ingest` | Ingest a framework (admin role) |
-
-### Example request: primary (CE1)
-
-```json
-POST /api/v1/lesson-plans
-{
-  "country": "TG",
-  "level": "primaire",
-  "class": "CE1",
-  "discipline": "Mathématiques",
-  "competency_code": "<code from the primary framework>",
-  "topic": "Numbers up to 100",
-  "duration_minutes": 45,
-  "format": "fiche_journaliere",
-  "language": "fr"
-}
-```
-
-### Example request: secondary (6e)
-
-```json
-POST /api/v1/lesson-plans
-{
-  "country": "TG",
-  "level": "secondaire",
-  "class": "6e",
-  "discipline": "Mathématiques",
-  "competency_code": "<code from the secondary framework>",
-  "topic": "Fractions",
-  "duration_minutes": 55,
-  "format": "fiche_preparation",
-  "language": "fr"
-}
-```
-
-### Output schema (excerpt)
-
-```python
-class Level(str, Enum):
-    PRIMAIRE = "primaire"       # CP1, CP2, CE1, CE2, CM1, CM2
-    SECONDAIRE = "secondaire"   # Collège (6e-3e), Lycée (2nde-Terminale)
-
-class PrimaryClass(str, Enum):
-    CP1 = "CP1"  # Cours Préparatoire 1re année
-    CP2 = "CP2"  # Cours Préparatoire 2e année
-    CE1 = "CE1"  # Cours Élémentaire 1re année
-    CE2 = "CE2"  # Cours Élémentaire 2e année
-    CM1 = "CM1"  # Cours Moyen 1re année
-    CM2 = "CM2"  # Cours Moyen 2e année
-
-class LessonPlan(BaseModel):
-    title: str
-    level: Level                   # primaire or secondaire, the first discriminating field
-    class_: PrimaryClass | str     # CP1-CM2 for primary, 6e-Terminale for secondary
-    discipline: str
-    competency_code: str
-    objectives: list[LearningObjective]
-    prerequisites: list[str]
-    materials: list[str]
-    phases: list[LessonPhase]      # introduction, development, synthesis, assessment
-    assessment: AssessmentCriteria
-    sources: list[SourceRef]       # RAG traceability (teacher's guide, official textbook, curriculum)
-
-class DailyPlanPrimaire(LessonPlan):
-    """Daily lesson sheet for primary teachers (CP1-CM2)."""
-    date: date
-    cycle: Literal["CP", "CE", "CM"]
-    activite_type: str             # e.g. reading, dictation, calculation, awakening
-    consignes_eleves: list[str]    # simple, age-appropriate pupil instructions
-```
-
-## Data model (overview)
-
-`countries`, `levels` (`primaire`, `secondaire`), `classes` (CP1 to CM2, 6e to Terminale), `referentials`, `competencies`, `situations`, `knowledge_items`, `primary_sources` (curricula, teacher's guides, official primary textbooks, with class, subject, year and publisher metadata), `document_chunks` (pgvector with `level` and `class` metadata, HNSW index), `reference_sheets` (`level`, `class`, `format`: fiche_journaliere | fiche_preparation), `lesson_plans` (`level`, `class`, `format`), `lesson_plan_versions`, `exports`, `organizations`, `memberships` (multi-tenant with Supabase RLS).
-
-## Security and compliance
-
-- Row Level Security on all user-owned tables.
-- No student personal data required, including for primary pupils; data minimization by default.
-- API keys stay server-side only.
-- LLM calls are logged without sensitive content, for audit and cost tracking.
-- Human in the loop: every generated plan, primary or secondary, is editable and must be reviewed by the teacher.
-
 ## Roadmap
 
-- **Phase 0, Foundations**: repository, CI, Supabase schema (with levels and classes), first framework ingestion.
-- **Phase 1, MVP**: lesson plans for **primary (CP1-CM2, daily sheets)** and for **secondary** (one discipline), DOCX / PDF export.
-- **Phase 2**: execution guides and reference sheet library, primary and secondary.
-- **Phase 3, Primary and secondary consolidation**: IESG profiles per level, complete primary teacher's guides and official textbooks, multi-country configuration.
-- **Phase 4, SaaS**: primary school and secondary establishment accounts, billing, quotas, dashboard.
-- **Phase 5, Quality**: teacher feedback loop (primary and secondary), automated plan evaluation.
-
-## Contributing
-
-Open an issue before any major change. Use Conventional Commits and run `uv run pytest` and `uv run ruff check` before each pull request. Contributions of primary resources (teacher's guides, validated daily sheets) are especially welcome.
+- **Phase 0: Foundations**: repository, CI, Supabase schema (classes and series), first Collège framework ingestion.
+- **Phase 1: MVP**: lesson plan generation for **Collège (6ème to 3ème)** for one subject, DOCX / PDF export.
+- **Phase 2: Lycée and execution guides**: 2nde, 1ère, Terminale (series A, C, D, etc.), execution guides and reference sheet library.
+- **Phase 3: Consolidation**: IESG profiles, complete Collège and Lycée execution guides and frameworks, multi-country configuration.
+- **Phase 4: SaaS**: secondary school accounts (collèges, lycées), billing, quotas, dashboard.
+- **Phase 5: Quality**: teacher feedback loop, automatic sheet evaluation.
 
 ## License
 
-To be defined by the repository owner. Until a license is published, all rights are reserved.
+License to be defined by the repository owner. Until a license is published, all rights are reserved.
