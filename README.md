@@ -23,26 +23,29 @@
 
 Le générateur est **exclusivement dédié au secondaire**. Il ne couvre pas l'enseignement primaire.
 
-| Niveau | Classes couvertes | Cycle |
+| Niveau | Classes couvertes | Séries / filières |
 |---|---|---|
-| **Secondaire 1 (Collège)** | 6ème, 5ème, 4ème, 3ème | Premier cycle du secondaire |
-| **Secondaire 2 (Lycée)** | 2nde, 1ère, Terminale (séries A, C, D, etc.) | Second cycle du secondaire |
+| **Secondaire 1 (Collège)** | 6ème, 5ème, 4ème, 3ème | Tronc commun |
+| **Secondaire 2 (Lycée)** | Seconde, Première, Terminale | Seconde A, C, CD, S ; Première A4, C, D ; Terminale A4, C4, D, CD |
+
+Le référentiel officiel de référence est constitué des **Guides d'exécution pédagogique du secondaire** (Collège & Lycée), qui définissent le cadre de l'APC pour chaque classe et chaque discipline.
 
 Le système s'appuie sur une architecture **RAG (Retrieval-Augmented Generation)** :
 
-- les **programmes officiels** et référentiels de compétences du secondaire sont indexés et recherchés sémantiquement ;
-- des **fiches pédagogiques de référence** (few-shot) servent d'exemples de structure, de ton et de niveau ;
+- les **Guides d'exécution pédagogique du secondaire** (Collège & Lycée) et les référentiels de compétences APC sont indexés et recherchés sémantiquement ;
+- des **fiches pédagogiques de référence** (fiches modèles étalons, few-shot) servent d'exemples de structure, de ton et de niveau ;
 - un **LLM** (accédé via un proxy **RodiumAI**) génère une fiche structurée, validée par schéma, puis exportée en **DOCX** et **PDF**.
 
 ### Fonctionnalités clés
 
-- Génération de **fiches de préparation** pour le Collège (6ème à 3ème) et le Lycée (2nde à Terminale).
-- Génération de **guides d'exécution pédagogique** (séquences, consignes, gestion du temps, différenciation) pour chaque classe.
+- Génération de **fiches de préparation** pour le Collège (6ème à 3ème) et le Lycée (Seconde, Première, Terminale), toutes séries confondues.
+- Génération de **guides d'exécution pédagogique** (séquences, consignes, gestion du temps, différenciation) pour chaque classe et chaque discipline.
 - Alignement explicite sur les **compétences, situations de vie et savoirs** de l'APC, avec un référentiel distinct pour le Collège et pour le Lycée.
-- Prise en compte des **séries du Lycée** (A, C, D, etc.) et des disciplines propres à chaque classe.
-- Conformité **IESG** et paramétrage national (Togo et au-delà) via des profils de référentiel par niveau.
+- Prise en compte des **séries du Lycée** (Seconde A, C, CD, S ; Première A4, C, D ; Terminale A4, C4, D, CD) et des disciplines propres à chaque série.
+- **Double ancrage** : contrainte légale par le Guide d'Exécution (Rulebook) et référence stylistique par les fiches modèles étalons (Few-Shot Gold Standard), voir ci-dessous.
+- Conformité **IESG** et paramétrage national (Togo et au-delà) via des profils de référentiel.
 - Export **DOCX** et **PDF** avec mise en page institutionnelle (fiche de préparation du secondaire).
-- Espace enseignant (compte, bibliothèque de fiches par classe, historique de versions).
+- Espace enseignant (compte, bibliothèque de fiches par classe et série, historique de versions).
 - Architecture multi-tenant prête pour une offre SaaS (collèges, lycées, réseaux, formateurs).
 
 ## Architecture
@@ -64,10 +67,10 @@ flowchart LR
 
 ### Pipeline RAG
 
-1. **Ingestion** : parsing des programmes, référentiels APC et fiches de référence du secondaire (PDF, DOCX), découpage par classe / série / compétence / situation / section.
+1. **Ingestion** : parsing des Guides d'exécution pédagogique du secondaire (Collège & Lycée), des référentiels APC et des fiches modèles étalons (PDF, DOCX), découpage par classe / série / compétence / situation / section.
 2. **Embeddings** : vectorisation des chunks et stockage dans `pgvector`, avec métadonnées (niveau `secondaire`, classe, série, discipline, référentiel, pays, version).
-3. **Récupération** : recherche hybride (similarité vectorielle + filtres métadonnées, dont la classe) sur le référentiel ciblé.
-4. **Few-shot** : sélection de 1 à 3 fiches de référence proches (même classe ou cycle, même discipline) injectées dans le prompt.
+3. **Récupération** : recherche hybride (similarité vectorielle + filtres métadonnées, dont la classe et la série) sur le référentiel ciblé.
+4. **Few-shot** : sélection de 1 à 3 fiches modèles proches (même classe, même discipline, même série si applicable) injectées dans le prompt.
 5. **Génération** : PydanticAI produit un objet typé `LessonPlan` (fiche de préparation) via le proxy RodiumAI.
 6. **Validation** : schéma Pydantic, contrôle de cohérence (compétence ↔ objectifs ↔ évaluation), réessai borné.
 7. **Export** : rendu DOCX / PDF à partir du modèle validé.
@@ -113,16 +116,16 @@ pedago-ai/
 │   ├── api/                  # FastAPI : routes, dépendances, configuration
 │   └── web/                  # Interface enseignant (secondaire)
 ├── packages/
-│   ├── core/                 # Domaine : LessonPlan, Competency, Cycle, Classe, Serie...
-│   ├── rag/                  # Ingestion, chunking, embeddings, retrieval (filtre classe)
+│   ├── core/                 # Domaine : LessonPlan, Competency, Classe, Serie...
+│   ├── rag/                  # Ingestion, chunking, embeddings, retrieval (filtre classe / série)
 │   ├── agents/               # Agents PydanticAI et prompts versionnés (secondaire)
 │   ├── llm/                  # Client RodiumAI (proxy) et abstraction modèle
 │   └── export/               # Rendu DOCX / PDF (fiche de préparation)
 ├── data/
 │   ├── referentiels/
-│   │   └── secondaire/       # Programmes, guides d'exécution, référentiels APC Collège & Lycée
+│   │   └── secondaire/       # Guides d'exécution pédagogique, référentiels APC Collège & Lycée
 │   └── fiches_reference/
-│       └── secondaire/       # Fiches de préparation Collège & Lycée validées
+│       └── secondaire/       # Fiches modèles étalons Collège & Lycée validées
 ├── supabase/
 │   ├── migrations/           # Schéma SQL, pgvector, RLS
 │   └── seed/
@@ -166,7 +169,7 @@ uv run uvicorn apps.api.main:app --reload
 | `RODIUM_MODEL` | Modèle par défaut |
 | `EMBEDDING_MODEL` | Modèle d'embeddings |
 | `DEFAULT_COUNTRY` | Pays de référentiel par défaut (ex. `TG`) |
-| `DEFAULT_LEVEL` | Niveau par défaut : `secondaire` |
+| `DEFAULT_LEVEL` | Niveau : `secondaire` |
 | `APP_ENV` | `dev`, `staging`, `prod` |
 
 ## API (aperçu)
@@ -180,8 +183,8 @@ Toutes les routes sont préfixées par `/api/v1` et protégées par un jeton Sup
 | `GET` | `/lesson-plans/{id}` | Récupère une fiche |
 | `PATCH` | `/lesson-plans/{id}` | Modifie une fiche (nouvelle version) |
 | `GET` | `/lesson-plans/{id}/export?format=docx\|pdf` | Exporte la fiche |
-| `GET` | `/referentiels?country=TG&level=secondaire` | Liste les référentiels du secondaire (programmes, guides d'exécution, APC) |
-| `GET` | `/reference-sheets?level=secondaire&classe=2nde` | Liste les fiches de référence d'une classe du secondaire |
+| `GET` | `/referentiels?country=TG&level=secondaire` | Liste les référentiels du secondaire (guides d'exécution, APC) |
+| `GET` | `/reference-sheets?level=secondaire&classe=2nde&serie=C` | Liste les fiches modèles étalons d'une classe et d'une série |
 | `POST` | `/admin/ingest` | Ingestion d'un référentiel (rôle admin) |
 
 ### Exemple de requête : Collège (6ème)
@@ -191,9 +194,9 @@ POST /api/v1/lesson-plans
 {
   "country": "TG",
   "level": "secondaire",
-  "class": "6ème",
+  "classe": "6ème",
   "discipline": "Mathématiques",
-  "competency_code": "<code tiré du référentiel du Collège>",
+  "competency_code": "<code tiré du Guide d'exécution du Collège>",
   "topic": "Les fractions",
   "duration_minutes": 55,
   "format": "fiche_preparation",
@@ -208,10 +211,10 @@ POST /api/v1/lesson-plans
 {
   "country": "TG",
   "level": "secondaire",
-  "class": "2nde",
+  "classe": "2nde",
   "serie": "C",
   "discipline": "Physique-Chimie",
-  "competency_code": "<code tiré du référentiel du Lycée>",
+  "competency_code": "<code tiré du Guide d'exécution du Lycée>",
   "topic": "<thème du programme>",
   "duration_minutes": 55,
   "format": "fiche_preparation",
@@ -223,7 +226,7 @@ POST /api/v1/lesson-plans
 
 ```python
 class Level(str, Enum):
-    SECONDAIRE = "secondaire"     # Secondaire 1 (Collège : 6ème, 5ème, 4ème, 3ème) et Secondaire 2 (Lycée : 2nde, 1ère, Terminale)
+    SECONDAIRE = "secondaire"     # Secondaire 1 (Collège) et Secondaire 2 (Lycée)
 
 class Classe(str, Enum):
     SIXIEME = "6ème"
@@ -234,11 +237,27 @@ class Classe(str, Enum):
     PREMIERE = "1ère"
     TERMINALE = "Tle"
 
+class Serie(str, Enum):
+    # Seconde
+    SECONDE_A = "A"
+    SECONDE_C = "C"
+    SECONDE_CD = "CD"
+    SECONDE_S = "S"
+    # Première
+    PREMIERE_A4 = "A4"
+    PREMIERE_C = "C"
+    PREMIERE_D = "D"
+    # Terminale
+    TERMINALE_A4 = "A4"
+    TERMINALE_C4 = "C4"
+    TERMINALE_D = "D"
+    TERMINALE_CD = "CD"
+
 class LessonPlan(BaseModel):
     title: str
     level: Level                   # toujours "secondaire"
     classe: Classe
-    serie: str | None             # séries du Lycée (A, C, D, etc.), None pour le Collège
+    serie: Serie | None            # séries du Lycée uniquement, None pour le Collège
     discipline: str
     competency_code: str
     objectives: list[LearningObjective]   # OPO formulés selon les fiches modèles étalons
@@ -251,13 +270,13 @@ class LessonPlan(BaseModel):
 
 ## Modèle de données (aperçu)
 
-- `countries`, `levels` (`secondaire`), `classes` (6ème à Terminale), `series` (A, C, D, etc., Lycée)
+- `countries`, `levels` (`secondaire`), `classes` (6ème à Terminale), `series` (Lycée : Seconde A/C/CD/S, Première A4/C/D, Terminale A4/C4/D/CD)
 - `referentials` (pays, niveau, version, IESG / profil national)
-- `competencies`, `situations`, `knowledge_items` (hiérarchie APC, par classe)
-- `primary_sources` (programmes, guides d'exécution, métadonnées : classe, série, discipline, année, éditeur)
-- `document_chunks` (`embedding vector(...)`, métadonnées dont `level` et `class`, index HNSW)
-- `reference_sheets` (fiches few-shot validées, `level`, `class`, `serie`, `format` : fiche_preparation)
-- `lesson_plans` (`level`, `class`, `serie`, `format`), `lesson_plan_versions`, `exports`
+- `competencies`, `situations`, `knowledge_items` (hiérarchie APC, par classe et série)
+- `official_sources` (Guides d'exécution pédagogique du secondaire, métadonnées : classe, série, discipline, année, éditeur)
+- `document_chunks` (`embedding vector(...)`, métadonnées dont `level`, `classe` et `serie`, index HNSW)
+- `reference_sheets` (fiches modèles étalons validées, `level`, `classe`, `serie`, `format` : fiche_preparation)
+- `lesson_plans` (`level`, `classe`, `serie`, `format`), `lesson_plan_versions`, `exports`
 - `organizations`, `memberships` (multi-tenant, RLS Supabase)
 
 ## Qualité, sécurité et conformité
@@ -267,20 +286,20 @@ class LessonPlan(BaseModel):
 - Clés API uniquement côté serveur ; secrets gérés par variables d'environnement.
 - Journalisation des appels LLM (sans contenu sensible) pour audit et coûts.
 - Contrôle humain : chaque fiche générée est éditable et doit être validée par l'enseignant.
-- Tests : unitaires (schémas, chunking, cohérence des classes et séries), intégration (RAG, export), évaluation de qualité des fiches (grille de relecture par classe).
+- Tests : unitaires (schémas, chunking, cohérence classes et séries), intégration (RAG, export), évaluation de qualité des fiches (grille de relecture par classe).
 
 ## Feuille de route / Roadmap
 
-- **Phase 0 : Fondations** : dépôt, CI, schéma Supabase (classes et séries), ingestion d'un premier référentiel du Collège.
+- **Phase 0 : Fondations** : dépôt, CI, schéma Supabase (classes et séries), ingestion du Guide d'exécution du Collège.
 - **Phase 1 : MVP** : génération de fiches de préparation pour le **Collège (6ème à 3ème)** et une discipline, export DOCX / PDF.
-- **Phase 2 : Lycée et guides d'exécution** : 2nde, 1ère, Terminale (séries A, C, D, etc.), guides d'exécution pédagogique et bibliothèque de fiches de référence.
-- **Phase 3 : Consolidation**, profils IESG, guides d'exécution et référentiels complets du Collège et du Lycée, paramétrage multi-pays.
+- **Phase 2 : Lycée et guides d'exécution** : Seconde, Première, Terminale (toutes séries), guides d'exécution pédagogique et bibliothèque de fiches modèles étalons.
+- **Phase 3 : Consolidation** : profils IESG, guides d'exécution et référentiels complets du Collège et du Lycée, paramétrage multi-pays.
 - **Phase 4 : SaaS** : comptes établissements secondaires (collèges, lycées), facturation, quotas, tableau de bord.
 - **Phase 5 : Qualité** : boucle de retour enseignants, évaluation automatique des fiches.
 
 ## Contribuer
 
-Les contributions sont bienvenues : ouvrez d'abord une issue pour discuter d'un changement majeur. Respectez les conventions de commit (Conventional Commits) et lancez `uv run pytest` et `uv run ruff check` avant chaque pull request. Les contributions de référentiels du secondaire (guides d'exécution, fiches modèles étalons validées) sont particulièrement bienvenues.
+Les contributions sont bienvenues : ouvrez d'abord une issue pour discuter d'un changement majeur. Respectez les conventions de commit (Conventional Commits) et lancez `uv run pytest` et `uv run ruff check` avant chaque pull request. Les contributions de Guides d'exécution du secondaire et de fiches modèles étalons validées sont particulièrement bienvenues.
 
 ## Licence / License
 
@@ -296,27 +315,57 @@ Licence à définir par le titulaire du dépôt. Tant qu'aucune licence n'est pu
 
 The generator is **exclusively dedicated to secondary school**. It does not cover primary school.
 
-| Level | Classes covered | Cycle |
+| Level | Classes covered | Streams |
 |---|---|---|
-| **Secondaire 1 (Collège)** | 6ème, 5ème, 4ème, 3ème | First secondary cycle |
-| **Secondaire 2 (Lycée)** | 2nde, 1ère, Terminale (series A, C, D, etc.) | Second secondary cycle |
+| **Secondaire 1 (Collège)** | 6ème, 5ème, 4ème, 3ème | Common core |
+| **Secondaire 2 (Lycée)** | Seconde, Première, Terminale | Seconde A, C, CD, S ; Première A4, C, D ; Terminale A4, C4, D, CD |
+
+The official reference framework is the **Guides d'exécution pédagogique du secondaire** (Collège & Lycée), which define the APC framework for each class and each subject.
 
 The system is built on **Retrieval-Augmented Generation (RAG)**:
 
-- official curricula and secondary competency frameworks are indexed and searched semantically;
-- **few-shot reference sheets** provide structure, tone and level examples;
+- the secondary **Guides d'exécution pédagogique** (Collège & Lycée) and APC competency frameworks are indexed and searched semantically;
+- **few-shot model sheets** (fiches modèles étalons) provide structure, tone and level examples;
 - an **LLM** (accessed through a **RodiumAI** proxy) generates a schema-validated plan, exported to **DOCX** and **PDF**.
 
 ### Key features
 
-- Lesson plan generation for Collège (6ème to 3ème) and Lycée (2nde to Terminale).
-- Pedagogical **execution guides** (sequences, instructions, timing, differentiation) for every class.
+- Lesson plan generation for Collège (6ème to 3ème) and Lycée (Seconde, Première, Terminale), all streams included.
+- Pedagogical **execution guides** (sequences, instructions, timing, differentiation) for every class and subject.
 - Explicit alignment with APC **competencies, life situations and knowledge items**, with separate Collège and Lycée frameworks.
-- Support for **Lycée series** (A, C, D, etc.) and the subjects specific to each class.
-- **IESG** compliance and national configuration (Togo and beyond) through per-level framework profiles.
+- Support for **Lycée streams** (Seconde A, C, CD, S ; Première A4, C, D ; Terminale A4, C4, D, CD) and the subjects specific to each stream.
+- **Dual anchoring**: legal constraint from the Guide d'Exécution (Rulebook) and stylistic reference from the model sheets (Few-Shot Gold Standard), see below.
+- **IESG** compliance and national configuration (Togo and beyond) through framework profiles.
 - **DOCX** and **PDF** export with institutional layout (secondary lesson plan).
-- Teacher workspace (accounts, sheet library by class, version history).
+- Teacher workspace (accounts, sheet library by class and stream, version history).
 - Multi-tenant architecture ready for a SaaS offering (collèges, lycées, networks, trainers).
+
+## Architecture
+
+```mermaid
+flowchart LR
+    U[Secondary teacher / Web App] -->|HTTPS| API[FastAPI]
+    API --> AUTH[Supabase Auth]
+    API --> AG[PydanticAI Agent]
+    AG --> RET[Secondary RAG Retriever]
+    RET --> PG[(Supabase Postgres + pgvector)]
+    AG --> PROXY[RodiumAI LLM Proxy]
+    PROXY --> LLM[(LLM models)]
+    AG --> VAL[Pydantic validation]
+    VAL --> EXP[DOCX / PDF export]
+    EXP --> STO[(Supabase Storage)]
+    API --> PG
+```
+
+### RAG pipeline
+
+1. **Ingestion**: parse the secondary Guides d'exécution pédagogique (Collège & Lycée), APC frameworks and model sheets (PDF, DOCX), chunk by class / stream / competency / situation / section.
+2. **Embeddings**: vectorize chunks into `pgvector` with metadata (level `secondaire`, class, stream, subject, framework, country, version).
+3. **Retrieval**: hybrid search (vector similarity + metadata filters, including class and stream) on the target framework.
+4. **Few-shot**: select 1 to 3 close model sheets (same class, same subject, same stream where applicable) for the prompt.
+5. **Generation**: PydanticAI returns a typed `LessonPlan` through the RodiumAI proxy.
+6. **Validation**: Pydantic schema plus consistency checks (competency, objectives and assessment must agree), bounded retries.
+7. **Export**: DOCX / PDF rendering from the validated model.
 
 ### Dual-anchor compliance rule: Regulatory and Didactic Double Anchor (Rulebook and Few-Shot Gold Standard)
 
@@ -329,8 +378,8 @@ Every generated plan (lesson plan or pedagogical execution guide) MUST strictly 
 
 **Retrieval and prompt architecture**:
 
-- **Step A, Rulebook (hard filter)**: deterministic retrieval, not only semantic, of Guide d'Exécution excerpts matching class, series (where applicable), discipline and competency code. They are injected in a `[RULEBOOK]` block presented as non-negotiable constraints.
-- **Step B, Gold Standard (few-shot)**: 1 to 3 validated model sheets, selected first by metadata (class, series, discipline, sheet type), then by topic similarity. They are injected in a `[GOLD_STANDARD]` block presented only as examples of style, structure and vocabulary.
+- **Step A, Rulebook (hard filter)**: deterministic retrieval, not only semantic, of Guide d'Exécution excerpts matching class, stream (where applicable), subject and competency code. They are injected in a `[RULEBOOK]` block presented as non-negotiable constraints: terminal competency, duration, prerequisites, progression and permitted learning situations.
+- **Step B, Gold Standard (few-shot)**: 1 to 3 validated model sheets, selected first by metadata (class, stream, subject, sheet type), then by topic similarity. They are injected in a `[GOLD_STANDARD]` block presented only as examples of style, structure and vocabulary.
 - **Step C, constrained generation**: the LLM returns a typed `LessonPlan`. Every content element must be justified by a Rulebook source, and the style imitated from the Gold Standard. The `sources` field distinguishes `rulebook` and `gold_standard` references.
 - **Step D, two-pass validation**: (a) Rulebook check: total duration, competency and objectives, prerequisites, progression and permitted situations. (b) Gold Standard check: phase structure, OPO wording, didactic vocabulary and formatting. A failure in (a) triggers bounded retries, then a reasoned refusal. A failure in (b) alone triggers a stylistic rewrite.
 - **Prohibitions**: never copy a model sheet word for word; never use a model sheet as a source of legality; never generate a sheet without Rulebook excerpts (explicit failure rather than free generation).
@@ -351,6 +400,10 @@ Every generated plan (lesson plan or pedagogical execution guide) MUST strictly 
 | Quality | pytest, ruff, mypy, pre-commit |
 | CI/CD | GitHub Actions |
 
+## Planned repository layout
+
+See the French section above for the directory tree. Secondary resources live under `data/referentiels/secondaire/` and `data/fiches_reference/secondaire/`.
+
 ## Quick start
 
 ```bash
@@ -362,14 +415,129 @@ uv run pre-commit install
 uv run uvicorn apps.api.main:app --reload
 ```
 
+Required environment variables: `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_DB_URL`, `RODIUM_API_KEY`, `RODIUM_BASE_URL`, `RODIUM_MODEL`, `EMBEDDING_MODEL`, `DEFAULT_COUNTRY` (e.g. `TG`), `DEFAULT_LEVEL` (`secondaire`), `APP_ENV`.
+
+## API (overview)
+
+Routes are prefixed with `/api/v1` and protected by a Supabase JWT (`Authorization: Bearer <jwt>`). The `level` parameter only accepts `secondaire`.
+
+| Method | Route | Description |
+|---|---|---|
+| `POST` | `/lesson-plans` | Generate a lesson plan (Collège or Lycée) |
+| `POST` | `/execution-guides` | Generate a pedagogical execution guide (Collège or Lycée) |
+| `GET` | `/lesson-plans/{id}` | Fetch a plan |
+| `PATCH` | `/lesson-plans/{id}` | Edit a plan (new version) |
+| `GET` | `/lesson-plans/{id}/export?format=docx\|pdf` | Export a plan |
+| `GET` | `/referentiels?country=TG&level=secondaire` | List secondary frameworks (execution guides, APC) |
+| `GET` | `/reference-sheets?level=secondaire&classe=2nde&serie=C` | List model sheets for a class and stream |
+| `POST` | `/admin/ingest` | Ingest a framework (admin role) |
+
+### Example request: Collège (6ème)
+
+```json
+POST /api/v1/lesson-plans
+{
+  "country": "TG",
+  "level": "secondaire",
+  "classe": "6ème",
+  "discipline": "Mathématiques",
+  "competency_code": "<code from the Collège execution guide>",
+  "topic": "Fractions",
+  "duration_minutes": 55,
+  "format": "fiche_preparation",
+  "language": "fr"
+}
+```
+
+### Example request: Lycée (2nde, stream C)
+
+```json
+POST /api/v1/lesson-plans
+{
+  "country": "TG",
+  "level": "secondaire",
+  "classe": "2nde",
+  "serie": "C",
+  "discipline": "Physique-Chimie",
+  "competency_code": "<code from the Lycée execution guide>",
+  "topic": "<programme theme>",
+  "duration_minutes": 55,
+  "format": "fiche_preparation",
+  "language": "fr"
+}
+```
+
+### Output schema (excerpt)
+
+```python
+class Level(str, Enum):
+    SECONDAIRE = "secondaire"     # Secondaire 1 (Collège) and Secondaire 2 (Lycée)
+
+class Classe(str, Enum):
+    SIXIEME = "6ème"
+    CINQUIEME = "5ème"
+    QUATRIEME = "4ème"
+    TROISIEME = "3ème"
+    SECONDE = "2nde"
+    PREMIERE = "1ère"
+    TERMINALE = "Tle"
+
+class Serie(str, Enum):
+    # Seconde
+    SECONDE_A = "A"
+    SECONDE_C = "C"
+    SECONDE_CD = "CD"
+    SECONDE_S = "S"
+    # Première
+    PREMIERE_A4 = "A4"
+    PREMIERE_C = "C"
+    PREMIERE_D = "D"
+    # Terminale
+    TERMINALE_A4 = "A4"
+    TERMINALE_C4 = "C4"
+    TERMINALE_D = "D"
+    TERMINALE_CD = "CD"
+
+class LessonPlan(BaseModel):
+    title: str
+    level: Level                   # always "secondaire"
+    classe: Classe
+    serie: Serie | None            # Lycée streams only, None for Collège
+    discipline: str
+    competency_code: str
+    objectives: list[LearningObjective]   # OPO worded according to the model sheets
+    prerequisites: list[str]
+    materials: list[str]
+    phases: list[LessonPhase]      # introduction, development, synthesis, assessment
+    assessment: AssessmentCriteria
+    sources: list[SourceRef]       # traceability: rulebook (execution guide) and gold_standard (model sheet)
+```
+
+## Data model (overview)
+
+`countries`, `levels` (`secondaire`), `classes` (6ème to Terminale), `series` (Lycée: Seconde A/C/CD/S, Première A4/C/D, Terminale A4/C4/D/CD), `referentials` (country, level, version, IESG / national profile), `competencies`, `situations`, `knowledge_items` (APC hierarchy, per class and stream), `official_sources` (secondary execution guides, with class, stream, subject, year and publisher metadata), `document_chunks` (pgvector with `level`, `classe` and `serie` metadata, HNSW index), `reference_sheets` (validated model sheets, `level`, `classe`, `serie`, `format`: fiche_preparation), `lesson_plans` (`level`, `classe`, `serie`, `format`), `lesson_plan_versions`, `exports`, `organizations`, `memberships` (multi-tenant with Supabase RLS).
+
+## Security and compliance
+
+- Row Level Security on all user-owned tables.
+- No student personal data required; data minimization by default.
+- API keys stay server-side only.
+- LLM calls are logged without sensitive content, for audit and cost tracking.
+- Human in the loop: every generated plan is editable and must be reviewed by the teacher.
+- Tests: unit (schemas, chunking, class and stream consistency), integration (RAG, export), plan quality evaluation (review grid per class).
+
 ## Roadmap
 
-- **Phase 0: Foundations**: repository, CI, Supabase schema (classes and series), first Collège framework ingestion.
-- **Phase 1: MVP**: lesson plan generation for **Collège (6ème to 3ème)** for one subject, DOCX / PDF export.
-- **Phase 2: Lycée and execution guides**: 2nde, 1ère, Terminale (series A, C, D, etc.), execution guides and reference sheet library.
-- **Phase 3: Consolidation**: IESG profiles, complete Collège and Lycée execution guides and frameworks, multi-country configuration.
-- **Phase 4: SaaS**: secondary school accounts (collèges, lycées), billing, quotas, dashboard.
-- **Phase 5: Quality**: teacher feedback loop, automatic sheet evaluation.
+- **Phase 0, Foundations**: repository, CI, Supabase schema (classes and streams), ingestion of the Collège execution guide.
+- **Phase 1, MVP**: lesson plans for **Collège (6ème to 3ème)** for one subject, DOCX / PDF export.
+- **Phase 2, Lycée and execution guides**: Seconde, Première, Terminale (all streams), execution guides and model sheet library.
+- **Phase 3, Consolidation**: IESG profiles, complete Collège and Lycée execution guides and frameworks, multi-country configuration.
+- **Phase 4, SaaS**: secondary establishment accounts (collèges, lycées), billing, quotas, dashboard.
+- **Phase 5, Quality**: teacher feedback loop, automatic sheet evaluation.
+
+## Contributing
+
+Open an issue before any major change. Use Conventional Commits and run `uv run pytest` and `uv run ruff check` before each pull request. Contributions of secondary execution guides and validated model sheets are especially welcome.
 
 ## License
 
