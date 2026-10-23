@@ -1,4 +1,4 @@
-/* Pedago-AI frontend: vanilla JS, no frameworks. */
+/* PrepaCours frontend: vanilla JS, no frameworks. */
 (() => {
   'use strict';
 
@@ -229,7 +229,7 @@
     } catch (err) {
       source = 'demo';
       fiche = buildDemoFiche(state.teacher, state.params);
-      setNotice('gen-notice', 'Le service de génération n’est pas disponible pour le moment. Une fiche de démonstration a été créée localement ; elle ne remplace pas une fiche générée par Pedago-AI.');
+      setNotice('gen-notice', 'Le service de génération n’est pas disponible pour le moment. Une fiche de démonstration a été créée localement ; elle ne remplace pas une fiche générée par PrepaCours.');
     }
     await animation;
     btn.disabled = false;
