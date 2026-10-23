@@ -11,7 +11,7 @@ class Settings(BaseSettings):
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
-    app_name: str = "pedago-ai"
+    app_name: str = "PrepaCours"
     app_env: str = "development"
     cors_origins: list[str] = Field(default_factory=lambda: ["http://localhost:3000"])
 
