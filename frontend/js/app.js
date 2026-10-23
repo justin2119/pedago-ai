@@ -8,6 +8,8 @@
   const API_BASE = '/api/v1';
   const REQUEST_TIMEOUT_MS = 60000;
   const DRES = ['Maritime', 'Golfe-Lomé', 'Plateaux-Est', 'Plateaux-Ouest', 'Centrale', 'Kara', 'Savanes'];
+  const PERIOD_MINUTES = 55;
+  const VALID_DUREES = [1, 2, 3, 4, 5, 6].map((n) => n * PERIOD_MINUTES);
   const PIPELINE = [
     { key: 'planning', label: 'Planning' },
     { key: 'ingestion', label: 'Ingestion Search' },
@@ -133,8 +135,8 @@
       errorEl.textContent = 'Le thème et la compétence sont obligatoires.';
       return;
     }
-    if (!Number.isFinite(data.duree) || data.duree < 15 || data.duree > 240) {
-      errorEl.textContent = 'La durée doit être comprise entre 15 et 240 minutes.';
+    if (!VALID_DUREES.includes(data.duree)) {
+      errorEl.textContent = 'La durée doit être de 1 à 6 périodes de 55 minutes.';
       return;
     }
     errorEl.textContent = '';
