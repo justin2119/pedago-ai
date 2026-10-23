@@ -5,10 +5,10 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI
+from fastapi.middleware import Middleware
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
-from starlette.middleware import Middleware
 
 from pedago_ai import __version__
 from pedago_ai.api.v1.routes import router as api_v1_router
@@ -32,6 +32,7 @@ def create_app() -> FastAPI:
         version=__version__,
         lifespan=lifespan,
         middleware=[
+            # noinspection PyTypeChecker
             Middleware(
                 CORSMiddleware,
                 allow_origins=settings.cors_origins,
