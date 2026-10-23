@@ -1,9 +1,47 @@
 """Lesson plan schemas for the APC (Approche Par Competences) Togolese secondary curriculum."""
 
+import re
 from enum import StrEnum
-from typing import Optional
+from typing import Any, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
+
+PERIOD_MINUTES = 55
+MAX_PERIODS = 6
+
+# "2 h (55 min × 2)" or "2 h (55 min x 2)"
+_HOURS_FORMAT = re.compile(r"^(\d+)\s*h\s*\(\s*55\s*min(?:\s*[x×*]\s*\d+)?\s*\)$", re.IGNORECASE)
+# "55 min × 2", "55 min" or "1 h (55 min)" style period counts
+_PERIOD_FORMAT = re.compile(r"^55\s*min(?:\s*[x×*]\s*(\d+))?$", re.IGNORECASE)
+
+
+def parse_duration_minutes(value: Any) -> int:
+    """Convert a duration into total minutes.
+
+    Accepts an integer number of minutes (e.g. 110), a numeric string ("110"), or a Togolese
+    period label such as "2 h (55 min × 2)", "55 min × 2" or "55 min". Period labels are
+    converted to minutes using official 55-minute periods, from 1 to 6 periods.
+    """
+    if isinstance(value, bool):
+        raise ValueError("Durée invalide.")
+    if isinstance(value, int):
+        return value
+    if not isinstance(value, str):
+        raise ValueError("Durée invalide.")
+    text = value.strip()
+    if text.isdigit():
+        return int(text)
+    hours_match = _HOURS_FORMAT.match(text)
+    if hours_match:
+        periods = int(hours_match.group(1))
+    else:
+        period_match = _PERIOD_FORMAT.match(text)
+        if not period_match:
+            raise ValueError("Durée invalide : utilisez par exemple « 2 h (55 min × 2) ».")
+        periods = int(period_match.group(1) or 1)
+    if not 1 <= periods <= MAX_PERIODS:
+        raise ValueError("La durée doit comprendre entre 1 et 6 périodes de 55 minutes.")
+    return periods * PERIOD_MINUTES
 
 
 class ActivityKind(StrEnum):
@@ -73,7 +111,11 @@ class LessonPlanHeader(BaseModel):
     theme: str
     sub_theme: str | None = None
     competence: str = Field(..., description="Target APC competence.")
-    duration_minutes: int = Field(55, ge=10)
+    duration_minutes: int = Field(110, ge=10, description="Total minutes, a multiple of 55 (1 to 6 periods).")
+
+    _parse_duration = field_validator("duration_minutes", mode="before")(
+        lambda cls, value: parse_duration_minutes(value)
+    )
 
 
 class LessonPlanRequest(BaseModel):
@@ -84,9 +126,13 @@ class LessonPlanRequest(BaseModel):
     level: str = Field(..., description="Class level, e.g. Seconde C.")
     theme: str
     sub_theme: str | None = None
-    duration_minutes: int = Field(55, ge=10)
+    duration_minutes: int = Field(110, ge=10, description="Total minutes, a multiple of 55 (1 to 6 periods).")
     competence: str = Field(..., description="Target APC competence.")
     context: str | None = Field(None, description="Retrieved curriculum context.")
+
+    _parse_duration = field_validator("duration_minutes", mode="before")(
+        lambda cls, value: parse_duration_minutes(value)
+    )
 
 
 class LessonPlan(BaseModel):
