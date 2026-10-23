@@ -1,6 +1,6 @@
 {
-  "name": "Pedago-AI",
-  "short_name": "Pedago-AI",
+  "name": "PrepaCours",
+  "short_name": "PrepaCours",
   "description": "Génération de fiches APC pour les enseignants togolais.",
   "lang": "fr",
   "start_url": "/app/",
