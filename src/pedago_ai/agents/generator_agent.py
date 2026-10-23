@@ -1,7 +1,7 @@
 """Generator agent: produces an APC lesson plan using PydanticAI and an OpenAI-compatible model."""
 
 from pydantic_ai import Agent
-from pydantic_ai.models.openai import OpenAIModel
+from pydantic_ai.models.openai import OpenAIChatModel
 from pydantic_ai.providers.openai import OpenAIProvider
 
 from pedago_ai.config import get_settings
@@ -17,11 +17,11 @@ SYSTEM_PROMPT = (
 )
 
 
-def build_model() -> OpenAIModel:
+def build_model() -> OpenAIChatModel:
     """Create the OpenAI-compatible chat model from settings."""
     settings = get_settings()
     provider = OpenAIProvider(base_url=settings.model_base_url, api_key=settings.model_api_key)
-    return OpenAIModel(settings.model_name, provider=provider)
+    return OpenAIChatModel(settings.model_name, provider=provider)
 
 
 def build_generator() -> Agent[None, LessonPlan]:
