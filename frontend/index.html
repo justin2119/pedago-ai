@@ -80,8 +80,15 @@
               <option value="CD">CD</option>
             </select>
           </label>
-          <label>Durée (minutes)
-            <input id="duree" name="duree" type="number" min="15" max="240" step="5" value="55" required>
+          <label>Durée (périodes de 55 min)
+            <select id="duree" name="duree" required>
+              <option value="55">1 h (55 min)</option>
+              <option value="110" selected>2 h (55 min × 2)</option>
+              <option value="165">3 h (55 min × 3)</option>
+              <option value="220">4 h (55 min × 4)</option>
+              <option value="275">5 h (55 min × 5)</option>
+              <option value="330">6 h (55 min × 6)</option>
+            </select>
           </label>
           <label class="span-2">Thème / Chapitre
             <input id="theme" name="theme" type="text" required placeholder="Ex. Les acides et les bases">
