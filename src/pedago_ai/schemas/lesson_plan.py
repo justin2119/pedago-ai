@@ -9,9 +9,9 @@ from pydantic import BaseModel, Field, field_validator
 PERIOD_MINUTES = 55
 MAX_PERIODS = 6
 
-# "2 h (55 min × 2)" or "2 h (55 min x 2)"
+# Matches "2 h (55 min × 2)", "2 h (55 min x 2)" and "1 h (55 min)".
 _HOURS_FORMAT = re.compile(r"^(\d+)\s*h\s*\(\s*55\s*min(?:\s*[x×*]\s*\d+)?\s*\)$", re.IGNORECASE)
-# "55 min × 2", "55 min" or "1 h (55 min)" style period counts
+# Matches "55 min × 2", "55 min x 2" and "55 min".
 _PERIOD_FORMAT = re.compile(r"^55\s*min(?:\s*[x×*]\s*(\d+))?$", re.IGNORECASE)
 
 
@@ -111,11 +111,12 @@ class LessonPlanHeader(BaseModel):
     theme: str
     sub_theme: str | None = None
     competence: str = Field(..., description="Target APC competence.")
-    duration_minutes: int = Field(110, ge=10, description="Total minutes, a multiple of 55 (1 to 6 periods).")
+    duration_minutes: int = Field(55, ge=10, description="Total minutes; a multiple of 55 (1 to 6 periods).")
 
-    _parse_duration = field_validator("duration_minutes", mode="before")(
-        lambda cls, value: parse_duration_minutes(value)
-    )
+    @field_validator("duration_minutes", mode="before")
+    @classmethod
+    def _check_duration(cls, value: Any) -> int:
+        return parse_duration_minutes(value)
 
 
 class LessonPlanRequest(BaseModel):
@@ -126,13 +127,14 @@ class LessonPlanRequest(BaseModel):
     level: str = Field(..., description="Class level, e.g. Seconde C.")
     theme: str
     sub_theme: str | None = None
-    duration_minutes: int = Field(110, ge=10, description="Total minutes, a multiple of 55 (1 to 6 periods).")
+    duration_minutes: int = Field(55, ge=10, description="Total minutes; a multiple of 55 (1 to 6 periods).")
     competence: str = Field(..., description="Target APC competence.")
     context: str | None = Field(None, description="Retrieved curriculum context.")
 
-    _parse_duration = field_validator("duration_minutes", mode="before")(
-        lambda cls, value: parse_duration_minutes(value)
-    )
+    @field_validator("duration_minutes", mode="before")
+    @classmethod
+    def _check_duration(cls, value: Any) -> int:
+        return parse_duration_minutes(value)
 
 
 class LessonPlan(BaseModel):
