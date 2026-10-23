@@ -3,6 +3,7 @@
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from pathlib import Path
+from typing import Any, cast
 
 from fastapi import FastAPI
 from fastapi.middleware import Middleware
@@ -34,7 +35,7 @@ def create_app() -> FastAPI:
         middleware=[
             # noinspection PyTypeChecker
             Middleware(
-                CORSMiddleware,
+                cast(Any, CORSMiddleware),
                 allow_origins=settings.cors_origins,
                 allow_credentials=True,
                 allow_methods=["*"],
