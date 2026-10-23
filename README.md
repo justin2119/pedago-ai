@@ -1,8 +1,8 @@
-# pedago-ai
+# PrepaCours (pedago-ai)
 
 ![Vert Foret](https://img.shields.io/badge/Vert_For%C3%AAt-006A4E?style=for-the-badge&logoColor=white) ![Jaune Or](https://img.shields.io/badge/Jaune_Or-FFCE00?style=for-the-badge&logoColor=black) ![Rouge Sang](https://img.shields.io/badge/Rouge_Sang-D21034?style=for-the-badge&logoColor=white) ![Blanc Pur](https://img.shields.io/badge/Blanc_Pur-FFFFFF?style=for-the-badge&logoColor=black) ![Fond clair](https://img.shields.io/badge/Fond_clair-F8FAF9?style=for-the-badge&logoColor=black)
 
-Génération de fiches pédagogiques assistée par intelligence artificielle pour l'Enseignement Secondaire Général (Collège et Lycée) au Togo, selon le cadre de l'Approche Par Compétences (APC).
+PrepaCours est un outil de génération de fiches pédagogiques assistée par intelligence artificielle pour l'Enseignement Secondaire Général (Collège et Lycée) au Togo, selon le cadre de l'Approche Par Compétences (APC).
 
 ## Pile technique
 
