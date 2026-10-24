@@ -282,10 +282,16 @@
     const btn = $('#export-btn');
     btn.disabled = true;
     try {
+      const teacher = {
+        ...state.teacher,
+        classe: (state.params && state.params.classe) ? state.params.classe : "",
+        serie: (state.params && state.params.serie) ? state.params.serie : null,
+      };
+      const body = { ...state.fiche, teacher: teacher };
       const response = await fetchWithTimeout(`${API_BASE}/export/docx`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fiche: state.fiche, teacher: state.teacher }),
+        body: JSON.stringify(body),
       });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const blob = await response.blob();
