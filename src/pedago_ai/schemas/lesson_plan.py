@@ -217,6 +217,28 @@ class LessonPlan(BaseModel):
     devoir_maison: str = ""
     notes: str | None = None
 
+    @field_validator("fiche_numero", mode="before")
+    @classmethod
+    def _coerce_fiche_numero(cls, value: Any) -> int:
+        """Accept a missing (null) or non-numeric fiche number and fall back to 1.
+
+        The frontend sends null when the teacher leaves the fiche number empty, which used to
+        fail validation with HTTP 422 on POST /api/v1/export/docx.
+        """
+        if value is None or isinstance(value, bool):
+            return 1
+        try:
+            number = int(value)
+        except (TypeError, ValueError):
+            return 1
+        return number if number >= 1 else 1
+
+    @field_validator("dre", "etablissement", "semaine", "annee_scolaire", mode="before")
+    @classmethod
+    def _coerce_header_text(cls, value: Any) -> str:
+        """Treat a null header field as an empty string instead of rejecting the plan."""
+        return "" if value is None else value
+
     @model_validator(mode="after")
     def _normalize_canonical_moments(self) -> "LessonPlan":
         """Repair timing and activities to the canonical moment order instead of failing.
