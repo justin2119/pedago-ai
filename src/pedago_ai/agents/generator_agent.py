@@ -43,7 +43,7 @@ def build_generator() -> Agent[None, LessonPlan]:
         build_model(),
         output_type=LessonPlan,
         system_prompt=SYSTEM_PROMPT,
-        output_retries=OUTPUT_RETRIES,
+        retries={"output": OUTPUT_RETRIES},
     )
 
 
