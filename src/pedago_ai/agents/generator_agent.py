@@ -7,6 +7,8 @@ from pydantic_ai.providers.openai import OpenAIProvider
 from pedago_ai.config import get_settings
 from pedago_ai.schemas.lesson_plan import PERIOD_MINUTES, LessonPlan, LessonPlanRequest
 
+OUTPUT_RETRIES = 3
+
 SYSTEM_PROMPT = (
     "You are an expert pedagogue for Togolese secondary schools following the APC "
     "(Approche Par Competences) framework. Produce a complete lesson plan with operational "
@@ -14,6 +16,9 @@ SYSTEM_PROMPT = (
     "items. Use the provided curriculum context when available. The request contains the "
     "teacher's administrative information (teacher block); keep it unchanged and do not invent "
     "any teacher, DRE, IESG or school details. "
+    "Every entry in activities MUST include a non-empty professor_activity (what the teacher "
+    "does) and a non-empty student_activity (what the learners do), in addition to phase, "
+    "duration_minutes and materials. Never omit these two fields. "
     "Togolese secondary lessons are measured in official periods of 55 minutes. The total "
     "duration is always 1 to 6 periods (55, 110, 165, 220, 275 or 330 minutes). Distribute the "
     "timing and activities so that the phase durations add up exactly to the total duration, "
@@ -34,7 +39,12 @@ def build_model() -> OpenAIChatModel:
 
 def build_generator() -> Agent[None, LessonPlan]:
     """Create the PydanticAI agent that returns a structured LessonPlan."""
-    return Agent(build_model(), output_type=LessonPlan, system_prompt=SYSTEM_PROMPT)
+    return Agent(
+        build_model(),
+        output_type=LessonPlan,
+        system_prompt=SYSTEM_PROMPT,
+        output_retries=OUTPUT_RETRIES,
+    )
 
 
 def period_hint(duration_minutes: int) -> str:
