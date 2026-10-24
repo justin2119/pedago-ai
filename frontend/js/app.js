@@ -19,6 +19,7 @@
   ];
   const PARAM_FIELDS = ['discipline', 'classe', 'serie', 'duree', 'theme', 'competence'];
   const TEACHER_FIELDS = ['nom', 'prenom', 'dre', 'iesg', 'etablissement', 'telephone'];
+  const PHASE_KINDS = ['motivation', 'prerequisites', 'construction', 'application', 'synthesis', 'evaluation'];
 
   const state = { step: 1, teacher: null, params: null, fiche: null, source: null };
 
@@ -277,6 +278,46 @@
       ? 'Fiche de démonstration : la génération IA n’est pas disponible.' : '');
   }
 
+  /* Convert the French fiche (titre, duree, phases) into the backend LessonPlan shape
+     expected by POST /api/v1/export/docx. A body that is already a LessonPlan passes through. */
+  function toLessonPlan(fiche, teacher) {
+    if (Array.isArray(fiche.activities) && Array.isArray(fiche.timing) && Array.isArray(fiche.objectives)) {
+      return { ...fiche, teacher: teacher };
+    }
+    const phases = Array.isArray(fiche.phases) ? fiche.phases : [];
+    const minutes = (value) => Math.max(1, Math.round(Number(value)) || 1);
+    const level = [fiche.classe, fiche.serie].filter(Boolean).join(' ');
+    const kindFor = (index) => PHASE_KINDS[Math.min(index, PHASE_KINDS.length - 1)];
+    const timing = phases.map((ph, i) => ({
+      phase: kindFor(i),
+      duration_minutes: minutes(ph.duree),
+      description: ph.nom || null,
+    }));
+    const activities = phases.map((ph, i) => ({
+      phase: kindFor(i),
+      professor_activity: ph.enseignant || '',
+      student_activity: ph.eleves || '',
+      duration_minutes: minutes(ph.duree),
+      materials: ph.supports ? [ph.supports] : [],
+    }));
+    return {
+      title: fiche.titre || `Fiche APC – ${fiche.theme || ''}`,
+      teacher: teacher,
+      subject: fiche.discipline || '',
+      level: level,
+      theme: fiche.theme || '',
+      competence: fiche.competence || '',
+      duration_minutes: Number(fiche.duree) || timing.reduce((sum, t) => sum + t.duration_minutes, 0),
+      objectives: [{ description: fiche.competence || fiche.theme || 'Objectif de la leçon', domain: 'cognitif' }],
+      prerequisites: [],
+      materials: [],
+      timing: timing.length ? timing : [{ phase: 'construction', duration_minutes: minutes(fiche.duree), description: null }],
+      activities: activities.length ? activities : [{ phase: 'construction', professor_activity: '', student_activity: '', duration_minutes: minutes(fiche.duree), materials: [] }],
+      evaluation: [],
+      notes: null,
+    };
+  }
+
   async function handleExport() {
     if (!state.fiche) return;
     const btn = $('#export-btn');
@@ -287,7 +328,7 @@
         classe: (state.params && state.params.classe) ? state.params.classe : "",
         serie: (state.params && state.params.serie) ? state.params.serie : null,
       };
-      const body = { ...state.fiche, teacher: teacher };
+      const body = toLessonPlan(state.fiche, teacher);
       const response = await fetchWithTimeout(`${API_BASE}/export/docx`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
