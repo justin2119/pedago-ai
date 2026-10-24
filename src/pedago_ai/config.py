@@ -23,7 +23,7 @@ class Settings(BaseSettings):
 
     model_base_url: str = ""
     model_api_key: str = ""
-    model_name: str = "openai/gpt-6.1-sol"
+    model_name: str = "openai/gpt-4o-mini"
     embedding_model_name: str = "text-embedding-3-small"
 
 
