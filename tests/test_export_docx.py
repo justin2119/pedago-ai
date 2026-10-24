@@ -8,6 +8,7 @@ from pedago_ai.schemas.lesson_plan import (
     CANONICAL_MOMENTS,
     Activity,
     CapaciteContenu,
+    DidacticMoment,
     EvaluationItem,
     LessonPlan,
     Objective,
@@ -74,7 +75,7 @@ def _full_plan():
         essentiel_a_retenir="La vitesse moyenne est le rapport distance sur duree.",
         exercices_application=[
             {"enonce": "Un mobile parcourt 100 m en 20 s. Calculer sa vitesse.", "correction": "v = 5 m/s"},
-            "Exercice libre sans correction",
+            {"enonce": "Exercice libre sans correction"},
         ],
         devoir_maison="Refaire l'exercice 2 et tracer le graphe x(t).",
         notes="Prevoir une calculatrice.",
