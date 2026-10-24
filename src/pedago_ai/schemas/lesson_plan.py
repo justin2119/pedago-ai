@@ -1,8 +1,9 @@
 """Lesson plan schemas for the APC (Approche Par Competences) Togolese secondary curriculum."""
 
 import re
+from collections.abc import Callable, Iterable
 from enum import StrEnum
-from typing import Any, Optional
+from typing import Any, Optional, TypeVar
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
@@ -66,6 +67,27 @@ CANONICAL_MOMENTS: tuple[DidacticMoment, ...] = (
     DidacticMoment.INSTITUTIONNALISATION,
     DidacticMoment.REINVESTISSEMENT,
 )
+
+_MomentItem = TypeVar("_MomentItem")
+
+
+def _normalize_moments(
+    items: Iterable[_MomentItem], phase_of: Callable[[_MomentItem], DidacticMoment]
+) -> list[_MomentItem]:
+    """Sort items into canonical moment order and keep only the first item of each moment.
+
+    Never raises: an out-of-order or duplicated LLM output is repaired instead of failing generation.
+    """
+    order = {moment: index for index, moment in enumerate(CANONICAL_MOMENTS)}
+    seen: set[DidacticMoment] = set()
+    kept: list[_MomentItem] = []
+    for item in sorted(items, key=lambda it: order[phase_of(it)]):
+        phase = phase_of(item)
+        if phase in seen:
+            continue
+        seen.add(phase)
+        kept.append(item)
+    return kept
 
 
 class TeacherInfo(BaseModel):
@@ -185,7 +207,7 @@ class LessonPlan(BaseModel):
     materials: list[str] = Field(default_factory=list)
     # Matrix of operational capacities and the notional contents they rely on.
     capacites_contenus: list[CapaciteContenu] = Field(default_factory=list)
-    # Exactly the 6 canonical didactic moments, in order.
+    # Expected to hold the 6 canonical moments in order; repaired (not rejected) when they do not.
     timing: list[TimingSegment] = Field(..., min_length=1)
     activities: list[Activity] = Field(..., min_length=1)
     evaluation: list[EvaluationItem] = Field(default_factory=list)
@@ -196,19 +218,14 @@ class LessonPlan(BaseModel):
     notes: str | None = None
 
     @model_validator(mode="after")
-    def _check_canonical_moments(self) -> "LessonPlan":
-        """Require timing and activities to follow the 6 canonical moments in order."""
-        expected = list(CANONICAL_MOMENTS)
-        timing_moments = [segment.phase for segment in self.timing]
-        activity_moments = [activity.phase for activity in self.activities]
-        if timing_moments != expected:
-            raise ValueError(
-                "timing doit contenir exactement les 6 moments didactiques dans l'ordre : "
-                + ", ".join(m.value for m in expected)
-            )
-        if activity_moments != expected:
-            raise ValueError(
-                "activities doit contenir exactement les 6 moments didactiques dans l'ordre : "
-                + ", ".join(m.value for m in expected)
-            )
+    def _normalize_canonical_moments(self) -> "LessonPlan":
+        """Repair timing and activities to the canonical moment order instead of failing.
+
+        Items are sorted into the order prerequis, situation_probleme, recherche_resolution,
+        mise_en_commun, institutionnalisation, reinvestissement, and duplicated moments keep
+        their first occurrence. A missing moment is tolerated: the plan is kept as produced so
+        generation does not fail after the output retries.
+        """
+        self.timing = _normalize_moments(self.timing, lambda segment: segment.phase)
+        self.activities = _normalize_moments(self.activities, lambda activity: activity.phase)
         return self
