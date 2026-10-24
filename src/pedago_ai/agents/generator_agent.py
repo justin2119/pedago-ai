@@ -72,11 +72,13 @@ SYSTEM_PROMPT = (
     "and student activities, evaluation items and a final consolidation block. "
     "The request contains the teacher's administrative information (teacher block); keep it "
     "unchanged and do not invent any teacher, DRE, IESG or school details. "
-    "STRICT STRUCTURE: the timing and the activities must each contain exactly the 6 canonical "
-    "didactic moments, in this order: prerequis, situation_probleme, recherche_resolution, "
-    "mise_en_commun, institutionnalisation, reinvestissement. Do not add, remove, rename or "
-    "reorder them. Each activity must describe the teacher role AND the learners role for its "
-    "moment (professor_activity and student_activity, both non-empty). "
+    "STRICT STRUCTURE: the timing and the activities must each contain the 6 canonical "
+    "didactic moments, in this order. The field phase (in timing and in activities) must be "
+    "exactly one of these literal lowercase values, with no accents, spaces, numbering or "
+    "translation: prerequis, situation_probleme, recherche_resolution, mise_en_commun, "
+    "institutionnalisation, reinvestissement. Never use any other value for phase. Do not add, "
+    "remove, rename or reorder them. Each activity must describe the teacher role AND the learners "
+    "role for its moment (professor_activity and student_activity, both non-empty). "
     "Capacities matrix: capacites_contenus lists each operational capacity with its notional "
     "contents. "
     "Consolidation: essentiel_a_retenir (definitions, laws, formulas and units), "
@@ -133,6 +135,11 @@ def build_prompt(request: LessonPlanRequest, feedback: list[str]) -> str:
     """
     prompt = request.model_dump_json(indent=2)
     prompt += "\n\n" + period_hint(request.duration_minutes)
+    prompt += (
+        "\n\nRappel : dans timing et dans activities, le champ phase doit valoir exactement "
+        "l'une de ces valeurs : prerequis, situation_probleme, recherche_resolution, "
+        "mise_en_commun, institutionnalisation, reinvestissement (6 moments, dans cet ordre)."
+    )
     if request.context and request.context.strip():
         prompt += (
             "\n\n" + CORPUS_PRIORITY_RULE
