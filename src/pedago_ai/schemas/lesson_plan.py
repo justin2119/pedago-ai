@@ -4,7 +4,7 @@ import re
 from enum import StrEnum
 from typing import Any, Optional
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 PERIOD_MINUTES = 55
 MAX_PERIODS = 6
@@ -44,15 +44,28 @@ def parse_duration_minutes(value: Any) -> int:
     return periods * PERIOD_MINUTES
 
 
-class ActivityKind(StrEnum):
-    """Phase type of a classroom activity."""
+class DidacticMoment(StrEnum):
+    """The 6 canonical didactic moments of the Togolese APC lesson fiche, in order."""
 
-    MOTIVATION = "motivation"
-    PREREQUISITES = "prerequisites"
-    CONSTRUCTION = "construction"
-    APPLICATION = "application"
-    SYNTHESIS = "synthesis"
-    EVALUATION = "evaluation"
+    PREREQUIS = "prerequis"
+    SITUATION_PROBLEME = "situation_probleme"
+    RECHERCHE_RESOLUTION = "recherche_resolution"
+    MISE_EN_COMMUN = "mise_en_commun"
+    INSTITUTIONNALISATION = "institutionnalisation"
+    REINVESTISSEMENT = "reinvestissement"
+
+
+# Kept so existing imports of ActivityKind keep working; the values are the didactic moments.
+ActivityKind = DidacticMoment
+
+CANONICAL_MOMENTS: tuple[DidacticMoment, ...] = (
+    DidacticMoment.PREREQUIS,
+    DidacticMoment.SITUATION_PROBLEME,
+    DidacticMoment.RECHERCHE_RESOLUTION,
+    DidacticMoment.MISE_EN_COMMUN,
+    DidacticMoment.INSTITUTIONNALISATION,
+    DidacticMoment.REINVESTISSEMENT,
+)
 
 
 class TeacherInfo(BaseModel):
@@ -76,25 +89,32 @@ class Objective(BaseModel):
     bloom_level: str | None = Field(None, description="Bloom taxonomy level, if used.")
 
 
-class TimingSegment(BaseModel):
-    """A timed phase of the lesson."""
+class CapaciteContenu(BaseModel):
+    """One row of the Capacites / Contenus matrix: an operational capacity and its notional contents."""
 
-    phase: ActivityKind
+    capacite: str = Field(..., description="Capacite operationnelle observable visee.")
+    contenus: list[str] = Field(default_factory=list, description="Contenus notionnels associes.")
+
+
+class TimingSegment(BaseModel):
+    """A timed didactic moment of the lesson."""
+
+    phase: DidacticMoment
     duration_minutes: int = Field(..., ge=1)
     description: str | None = None
 
 
 class Activity(BaseModel):
-    """A professor or student activity within a lesson phase."""
+    """A professor or student activity within a didactic moment."""
 
-    phase: ActivityKind
+    phase: DidacticMoment
     professor_activity: str = Field(
         "",
-        description="What the teacher does during this phase. Required in every activity; never omit it.",
+        description="What the teacher does during this moment. Required in every activity; never omit it.",
     )
     student_activity: str = Field(
         "",
-        description="What the learners do during this phase. Required in every activity; never omit it.",
+        description="What the learners do during this moment. Required in every activity; never omit it.",
     )
     duration_minutes: int = Field(..., ge=1)
     materials: list[str] = Field(default_factory=list)
@@ -144,10 +164,16 @@ class LessonPlanRequest(BaseModel):
 
 
 class LessonPlan(BaseModel):
-    """Complete APC lesson plan."""
+    """Complete APC lesson plan following the official Togolese fiche structure."""
 
     title: str
     teacher: TeacherInfo | None = None
+    # Official header metadata (filled from the teacher block when known).
+    dre: str = ""
+    etablissement: str = ""
+    fiche_numero: int = 1
+    semaine: str = ""
+    annee_scolaire: str = ""
     subject: str
     level: str
     theme: str
@@ -157,7 +183,32 @@ class LessonPlan(BaseModel):
     objectives: list[Objective] = Field(..., min_length=1)
     prerequisites: list[str] = Field(default_factory=list)
     materials: list[str] = Field(default_factory=list)
+    # Matrix of operational capacities and the notional contents they rely on.
+    capacites_contenus: list[CapaciteContenu] = Field(default_factory=list)
+    # Exactly the 6 canonical didactic moments, in order.
     timing: list[TimingSegment] = Field(..., min_length=1)
     activities: list[Activity] = Field(..., min_length=1)
     evaluation: list[EvaluationItem] = Field(default_factory=list)
+    # Final consolidation block.
+    essentiel_a_retenir: str = ""
+    exercices_application: list[dict[str, Any]] = Field(default_factory=list)
+    devoir_maison: str = ""
     notes: str | None = None
+
+    @model_validator(mode="after")
+    def _check_canonical_moments(self) -> "LessonPlan":
+        """Require timing and activities to follow the 6 canonical moments in order."""
+        expected = list(CANONICAL_MOMENTS)
+        timing_moments = [segment.phase for segment in self.timing]
+        activity_moments = [activity.phase for activity in self.activities]
+        if timing_moments != expected:
+            raise ValueError(
+                "timing doit contenir exactement les 6 moments didactiques dans l'ordre : "
+                + ", ".join(m.value for m in expected)
+            )
+        if activity_moments != expected:
+            raise ValueError(
+                "activities doit contenir exactement les 6 moments didactiques dans l'ordre : "
+                + ", ".join(m.value for m in expected)
+            )
+        return self
