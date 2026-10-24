@@ -19,15 +19,17 @@
   ];
   const PARAM_FIELDS = ['discipline', 'classe', 'serie', 'duree', 'theme', 'competence'];
   const TEACHER_FIELDS = ['nom', 'prenom', 'dre', 'iesg', 'etablissement', 'telephone'];
-  const PHASE_KINDS = ['motivation', 'prerequisites', 'construction', 'application', 'synthesis', 'evaluation'];
-  const PHASE_LABELS = {
-    motivation: 'Motivation',
-    prerequisites: 'Mobilisation des prérequis',
-    construction: 'Construction',
-    application: 'Application',
-    synthesis: 'Synthèse',
-    evaluation: 'Évaluation',
-  };
+
+  /* The 6 canonical APC Togo didactic moments, in order (must match the backend enum). */
+  const MOMENTS = [
+    { key: 'prerequis', label: '1. Mobilisation des prérequis' },
+    { key: 'situation_probleme', label: '2. Situation-problème' },
+    { key: 'recherche_resolution', label: '3. Recherche / Résolution' },
+    { key: 'mise_en_commun', label: '4. Mise en commun' },
+    { key: 'institutionnalisation', label: '5. Institutionnalisation / Trace écrite' },
+    { key: 'reinvestissement', label: '6. Réinvestissement / Évaluation' },
+  ];
+  const MOMENT_LABELS = Object.fromEntries(MOMENTS.map((m) => [m.key, m.label]));
 
   const state = { step: 1, teacher: null, params: null, fiche: null, source: null };
 
@@ -81,7 +83,7 @@
       DRES.map((d) => `<option value="${escapeHtml(d)}">${escapeHtml(d)}</option>`).join('');
   }
 
-  function restoreFields(fields, saved, prefix) {
+  function restoreFields(fields, saved) {
     if (!saved) return;
     fields.forEach((id) => {
       const field = $('#' + id);
@@ -189,8 +191,7 @@
     return run;
   }
 
-  /* The API returns a LessonPlan (title, timing, activities, ...), not the French fiche shape.
-     Accept that shape and fail loudly on anything else. */
+  /* The API returns a LessonPlan (title, timing, activities, capacites_contenus, consolidation). */
   async function requestFiche(payload) {
     const response = await fetchWithTimeout(`${API_BASE}/generate`, {
       method: 'POST',
@@ -214,53 +215,63 @@
     return data;
   }
 
-  /* Convert the LessonPlan returned by POST /api/v1/generate into the fiche view model.
-     The full plan is kept so the DOCX export can send it back unchanged. */
+  /* The fiche view model is the LessonPlan itself. Only the display-only fields are added here. */
   function planToFiche(plan, teacher, params) {
-    const activities = Array.isArray(plan.activities) ? plan.activities : [];
-    const timing = Array.isArray(plan.timing) ? plan.timing : [];
-    const phases = activities.map((activity, index) => ({
-      nom: (timing[index] && timing[index].description) || PHASE_LABELS[activity.phase] || String(activity.phase),
-      duree: activity.duration_minutes,
-      enseignant: activity.professor_activity || '',
-      eleves: activity.student_activity || '',
-      supports: (activity.materials || []).join(', '),
-    }));
     return Object.assign({}, plan, {
-      titre: plan.title,
-      enseignant: teacher ? `${teacher.prenom} ${teacher.nom}` : '',
-      etablissement: teacher ? teacher.etablissement : '',
-      discipline: plan.subject,
+      teacher: teacher || plan.teacher || null,
+      dre: plan.dre || (teacher ? teacher.dre : ''),
+      etablissement: plan.etablissement || (teacher ? teacher.etablissement : ''),
       classe: params ? params.classe : plan.level,
       serie: params ? params.serie : '',
-      theme: plan.theme,
-      competence: plan.competence,
-      duree: plan.duration_minutes,
-      phases: phases,
     });
   }
 
+  /* Fallback fiche in the same 6-moment shape as the backend LessonPlan. */
   function buildDemoFiche(teacher, params) {
     const d = params.duree;
-    const part = (n) => Math.max(5, Math.round((d * n) / 100));
+    const share = { prerequis: 10, situation_probleme: 15, recherche_resolution: 30, mise_en_commun: 20, institutionnalisation: 10, reinvestissement: 15 };
+    const part = (key) => Math.max(5, Math.round((d * share[key]) / 100));
+    const text = {
+      prerequis: ['Poser des questions de rappel sur les notions utiles au thème.', 'Répondre aux questions et rappeler ses acquis.', 'Rappel des prérequis'],
+      situation_probleme: ['Présenter une situation contextualisée et poser la question-problème.', 'Observer la situation, reformuler la consigne et formuler des hypothèses.', 'Situation d’apprentissage'],
+      recherche_resolution: ['Organiser les groupes, distribuer le matériel et guider sans donner la réponse.', 'Expérimenter ou calculer en groupe, échanger avec ses pairs et prendre note.', 'Matériel de laboratoire, fiche d’activité'],
+      mise_en_commun: ['Animer la mise en commun, faire comparer les résultats et valider ou corriger.', 'Présenter ses résultats et argumenter.', 'Tableau, schémas'],
+      institutionnalisation: ['Institutionnaliser les notions clés et dicter la trace écrite.', 'Prendre note de la synthèse dans le cahier.', 'Trace écrite'],
+      reinvestissement: ['Proposer des exercices d’application et l’évaluation formative.', 'Résoudre les exercices individuellement.', 'Exercices d’évaluation'],
+    };
     return {
-      titre: `Fiche APC – ${params.theme}`,
-      enseignant: teacher ? `${teacher.prenom} ${teacher.nom}` : '',
+      title: `Fiche APC – ${params.theme}`,
+      teacher: teacher,
+      dre: teacher ? teacher.dre : '',
       etablissement: teacher ? teacher.etablissement : '',
-      discipline: params.discipline,
+      fiche_numero: 1,
+      semaine: '',
+      annee_scolaire: '',
+      subject: params.discipline,
+      level: params.classe,
       classe: params.classe,
       serie: params.serie,
       theme: params.theme,
       competence: params.competence,
-      duree: d,
-      phases: [
-        { nom: 'Situation de départ', duree: part(10), enseignant: 'Poser une question problème en lien avec le thème.', eleves: 'Formuler des hypothèses individuellement.', supports: 'Tableau, image contextuelle' },
-        { nom: 'Présentation de la situation', duree: part(15), enseignant: 'Présenter la situation d’apprentissage.', eleves: 'Lire et reformuler la consigne.', supports: 'Fiche élève' },
-        { nom: 'Activité 1 – Investigation', duree: part(30), enseignant: 'Guider les groupes et distribuer le matériel.', eleves: 'Réaliser l’expérience et noter les observations.', supports: 'Matériel de laboratoire, fiche d’activité' },
-        { nom: 'Activité 2 – Exploitation', duree: part(25), enseignant: 'Animer la mise en commun des résultats.', eleves: 'Interpréter les résultats et argumenter.', supports: 'Tableau, schémas' },
-        { nom: 'Synthèse', duree: part(10), enseignant: 'Institutionnaliser le savoir visé.', eleves: 'Recopier la synthèse dans le cahier.', supports: 'Trace écrite' },
-        { nom: 'Évaluation', duree: part(10), enseignant: 'Proposer un exercice d’application.', eleves: 'Résoudre l’exercice individuellement.', supports: 'Exercice d’évaluation' },
-      ],
+      duration_minutes: d,
+      objectives: [{ description: params.competence, domain: 'cognitif', bloom_level: null }],
+      prerequisites: [],
+      materials: [],
+      capacites_contenus: [{ capacite: params.competence, contenus: [] }],
+      timing: MOMENTS.map((m) => ({ phase: m.key, duration_minutes: part(m.key), description: m.label })),
+      activities: MOMENTS.map((m) => ({
+        phase: m.key,
+        professor_activity: text[m.key][0],
+        student_activity: text[m.key][1],
+        duration_minutes: part(m.key),
+        materials: [text[m.key][2]],
+      })),
+      evaluation: [],
+      essentiel_a_retenir: '',
+      exercices_application: [],
+      devoir_maison: '',
+      notes: null,
+      demo: true,
     };
   }
 
@@ -305,67 +316,99 @@
 
   /* ---------- Step 4: Live view & export ---------- */
 
+  function ensureExtraContainer() {
+    let el = $('#fiche-extra');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'fiche-extra';
+      const table = $('#fiche-table');
+      table.parentNode.parentNode.insertBefore(el, table.parentNode.nextSibling);
+    }
+    return el;
+  }
+
+  function renderHeaderBlock(f) {
+    const t = f.teacher || {};
+    const rows = [
+      ['DRE', f.dre || t.dre],
+      ['IESG', t.iesg],
+      ['Établissement', f.etablissement || t.etablissement],
+      ['Professeur', [t.prenom, t.nom].filter(Boolean).join(' ')],
+      ['Année scolaire', f.annee_scolaire],
+      ['Classe', [f.classe || t.classe, f.serie].filter(Boolean).join(' ')],
+      ['Discipline', f.subject],
+      ['Fiche N°', f.fiche_numero],
+      ['Semaine', f.semaine],
+      ['Durée', f.duration_minutes ? `${f.duration_minutes} min` : ''],
+      ['Thème', f.theme],
+      ['Leçon', f.sub_theme],
+      ['Compétence terminale', f.competence],
+      ['Supports / matériels', (f.materials || []).join(', ')],
+      ['Prérequis', (f.prerequisites || []).join(', ')],
+    ];
+    return '<h3>En-tête</h3><table class="apc-table"><tbody>' +
+      rows.filter((r) => r[1]).map((r) => `<tr><th>${escapeHtml(r[0])}</th><td>${escapeHtml(r[1])}</td></tr>`).join('') +
+      '</tbody></table>';
+  }
+
+  function renderMatrix(f) {
+    const rows = (f.capacites_contenus || []).map((row) =>
+      `<tr><td>${escapeHtml(row.capacite)}</td><td>${escapeHtml((row.contenus || []).join(' ; '))}</td></tr>`
+    ).join('');
+    return '<h3>Matrice Capacités / Contenus</h3><table class="apc-table"><thead><tr><th>Capacité opérationnelle</th><th>Contenus notionnels</th></tr></thead><tbody>' +
+      (rows || '<tr><td colspan="2">Non renseignée</td></tr>') + '</tbody></table>';
+  }
+
+  function renderConsolidation(f) {
+    const exos = (f.exercices_application || []).map((ex, i) => {
+      const enonce = ex.enonce || ex.énoncé || ex.question || '';
+      const correction = ex.correction || '';
+      return `<li><p><strong>Exercice ${i + 1}.</strong> ${escapeHtml(enonce)}</p>` +
+        (correction ? `<p><em>Correction :</em> ${escapeHtml(correction)}</p>` : '') + '</li>';
+    }).join('');
+    return '<h3>Consolidation</h3>' +
+      `<p><strong>Essentiel à retenir :</strong></p><p>${escapeHtml(f.essentiel_a_retenir || 'Non renseigné')}</p>` +
+      `<p><strong>Exercices d’application corrigés :</strong></p><ol>${exos || '<li>Non renseignés</li>'}</ol>` +
+      `<p><strong>Devoir de maison :</strong></p><p>${escapeHtml(f.devoir_maison || 'Non renseigné')}</p>`;
+  }
+
   function renderFiche() {
     const f = state.fiche;
     if (!f) return;
     const meta = [
-      f.discipline && `<span class="badge-pill yellow">${escapeHtml(f.discipline)}</span>`,
+      f.subject && `<span class="badge-pill yellow">${escapeHtml(f.subject)}</span>`,
       f.classe && `<span class="badge-pill">${escapeHtml(f.classe)} ${escapeHtml(f.serie || '')}</span>`,
-      f.duree && `<span class="badge-pill">${escapeHtml(f.duree)} min</span>`,
-      f.enseignant && `<span class="badge-pill">${escapeHtml(f.enseignant)}</span>`,
+      f.duration_minutes && `<span class="badge-pill">${escapeHtml(f.duration_minutes)} min</span>`,
+      f.teacher && `<span class="badge-pill">${escapeHtml(f.teacher.prenom)} ${escapeHtml(f.teacher.nom)}</span>`,
       state.source === 'demo'
         ? '<span class="badge-pill red">Démonstration</span>'
         : '<span class="badge-pill green">Généré</span>',
     ].filter(Boolean).join('');
     $('#fiche-meta').innerHTML = meta;
-    $('#h-fiche').textContent = f.titre || 'Fiche APC';
-    $('#fiche-body').innerHTML = (f.phases || []).map((ph) =>
-      `<tr><td>${escapeHtml(ph.nom)}</td><td>${escapeHtml(ph.duree)} min</td>` +
-      `<td>${escapeHtml(ph.enseignant)}</td><td>${escapeHtml(ph.eleves)}</td>` +
-      `<td>${escapeHtml(ph.supports)}</td></tr>`
-    ).join('');
+    $('#h-fiche').textContent = f.title || 'Fiche APC';
+
+    /* Grille didactique: the 6 moments, labelled in French, in canonical order. */
+    const timingByMoment = Object.fromEntries((f.timing || []).map((t) => [t.phase, t]));
+    const activityByMoment = Object.fromEntries((f.activities || []).map((a) => [a.phase, a]));
+    $('#fiche-body').innerHTML = MOMENTS.map((m) => {
+      const a = activityByMoment[m.key] || {};
+      const t = timingByMoment[m.key] || {};
+      const duree = a.duration_minutes || t.duration_minutes || '';
+      return `<tr><td>${escapeHtml(m.label)}</td><td>${escapeHtml(duree)} min</td>` +
+        `<td>${escapeHtml(a.professor_activity)}</td><td>${escapeHtml(a.student_activity)}</td>` +
+        `<td>${escapeHtml((a.materials || []).join(', '))}</td></tr>`;
+    }).join('');
+
+    ensureExtraContainer().innerHTML = renderHeaderBlock(f) + renderMatrix(f) + renderConsolidation(f);
     setNotice('fiche-notice', state.source === 'demo'
       ? 'Fiche de démonstration : la génération IA n’est pas disponible.' : '');
   }
 
-  /* Convert the French fiche (titre, duree, phases) into the backend LessonPlan shape
-     expected by POST /api/v1/export/docx. A body that is already a LessonPlan passes through. */
+  /* Convert the fiche into the backend LessonPlan shape for POST /api/v1/export/docx.
+     The fiche is already a LessonPlan, so only the teacher block is refreshed. */
   function toLessonPlan(fiche, teacher) {
-    if (Array.isArray(fiche.activities) && Array.isArray(fiche.timing) && Array.isArray(fiche.objectives)) {
-      return { ...fiche, teacher: teacher };
-    }
-    const phases = Array.isArray(fiche.phases) ? fiche.phases : [];
-    const minutes = (value) => Math.max(1, Math.round(Number(value)) || 1);
-    const level = [fiche.classe, fiche.serie].filter(Boolean).join(' ');
-    const kindFor = (index) => PHASE_KINDS[Math.min(index, PHASE_KINDS.length - 1)];
-    const timing = phases.map((ph, i) => ({
-      phase: kindFor(i),
-      duration_minutes: minutes(ph.duree),
-      description: ph.nom || null,
-    }));
-    const activities = phases.map((ph, i) => ({
-      phase: kindFor(i),
-      professor_activity: ph.enseignant || '',
-      student_activity: ph.eleves || '',
-      duration_minutes: minutes(ph.duree),
-      materials: ph.supports ? [ph.supports] : [],
-    }));
-    return {
-      title: fiche.titre || `Fiche APC – ${fiche.theme || ''}`,
-      teacher: teacher,
-      subject: fiche.discipline || '',
-      level: level,
-      theme: fiche.theme || '',
-      competence: fiche.competence || '',
-      duration_minutes: Number(fiche.duree) || timing.reduce((sum, t) => sum + t.duration_minutes, 0),
-      objectives: [{ description: fiche.competence || fiche.theme || 'Objectif de la leçon', domain: 'cognitif' }],
-      prerequisites: [],
-      materials: [],
-      timing: timing.length ? timing : [{ phase: 'construction', duration_minutes: minutes(fiche.duree), description: null }],
-      activities: activities.length ? activities : [{ phase: 'construction', professor_activity: '', student_activity: '', duration_minutes: minutes(fiche.duree), materials: [] }],
-      evaluation: [],
-      notes: null,
-    };
+    const { demo, classe, ...plan } = fiche;
+    return { ...plan, teacher: teacher };
   }
 
   async function handleExport() {
