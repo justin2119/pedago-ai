@@ -9,86 +9,90 @@ from pedago_ai.schemas.lesson_plan import PERIOD_MINUTES, LessonPlan, LessonPlan
 
 OUTPUT_RETRIES = 3
 
-# Canonical APC fiche (Physique 2nde S, APC Togo) used as the reference form and content model.
+# Canonical APC fiche (Physique Seconde, APC Togo) used as the reference form and content model.
 # Used in the fallback prompt when the corpus returns no extract. It is a template, not a source:
 # it must never be presented as a retrieved reference.
 APC_FICHE_TEMPLATE = (
-    "MODÈLE CANONIQUE DE FICHE APC (Physique 2nde S, APC Togo). Reproduis cette forme et cette "
-    "logique. Ne cite aucune source à partir de ce modèle.\n"
+    "MODELE CANONIQUE DE FICHE APC (Physique Seconde, APC Togo). Reproduis cette forme et cette "
+    "logique. Ne cite aucune source a partir de ce modele.\n"
     "\n"
-    "1. EN-TÊTE\n"
-    "- Infos administratives : DRE, Établissement, Professeur, Année scolaire, Classe, Discipline, "
-    "Fiche N°, Semaine, Durée (multiple de 55 min : 55, 110, 165, 220, 275 ou 330 minutes).\n"
-    "- Éléments pédagogiques : Compétence terminale, Thème, Leçon, Supports didactiques / matériels, "
-    "Prérequis.\n"
+    "1. EN-TETE\n"
+    "- Infos administratives : DRE, Etablissement, Professeur, Annee scolaire, Classe, Discipline, "
+    "Fiche N, Semaine, Duree (multiple de 55 min : 55, 110, 165, 220, 275 ou 330 minutes).\n"
+    "- Elements pedagogiques : Competence terminale, Theme, Lecon, Supports didactiques / materiels, "
+    "Prerequis.\n"
     "\n"
-    "2. MATRICE CAPACITÉS / CONTENUS\n"
-    "- Articule systématiquement chaque capacité opérationnelle visée (verbe observable) avec les "
-    "contenus notionnels associés (notions, lois, formules, unités).\n"
+    "2. MATRICE CAPACITES / CONTENUS\n"
+    "- Pour chaque capacite operationnelle observable, liste les contenus notionnels associes "
+    "(notions, lois, formules, unites). Une ligne par capacite.\n"
     "\n"
-    "3. GRILLE DIDACTIQUE (ACTIVITÉS), séquençage APC strict :\n"
-    "- Mobilisation des prérequis\n"
-    "- Situation-problème / présentation de la situation d'apprentissage\n"
-    "- Organisation du travail / recherche et résolution\n"
-    "- Mise en commun / discussion\n"
-    "- Institutionnalisation / trace écrite (synthèse)\n"
-    "- Réinvestissement / évaluation formative\n"
-    "Posture d'action pour chaque moment :\n"
-    "- Enseignant : pose des questions, organise les groupes, oriente, institutionnalise les notions clés.\n"
-    "- Élève : observe, expérimente ou calcule, échange avec ses pairs, formule des hypothèses, "
-    "prend note.\n"
+    "3. GRILLE DIDACTIQUE : exactement 6 moments, dans cet ordre, avec ces identifiants :\n"
+    "- prerequis : 1. Mobilisation des prerequis. Enseignant : pose des questions de rappel, "
+    "oriente. Eleves : repondent, rappellent leurs acquis.\n"
+    "- situation_probleme : 2. Situation-probleme / presentation de la situation d'apprentissage. "
+    "Enseignant : presente la situation contextualisee et pose la question-probleme. Eleves : "
+    "observent, lisent, reformulent la consigne, formulent des hypotheses.\n"
+    "- recherche_resolution : 3. Recherche / resolution. Enseignant : organise les groupes, "
+    "distribue le materiel, guide sans donner la reponse. Eleves : experimentent ou calculent, "
+    "echangent avec leurs pairs, prennent note.\n"
+    "- mise_en_commun : 4. Mise en commun / discussion. Enseignant : anime, fait comparer les "
+    "resultats, valide ou corrige. Eleves : presentent leurs resultats, argumentent.\n"
+    "- institutionnalisation : 5. Institutionnalisation / trace ecrite (synthese). Enseignant : "
+    "institutionnalise les notions cles. Eleves : prennent note de la synthese.\n"
+    "- reinvestissement : 6. Reinvestissement / evaluation formative. Enseignant : propose des "
+    "exercices d'application et l'evaluation. Eleves : resolvent individuellement.\n"
     "\n"
     "4. CONSOLIDATION FINALE\n"
-    "- Essentiel à retenir : définitions, lois, formules mathématiques et unités.\n"
-    "- Exercices d'application immédiats, avec éléments de correction.\n"
-    "- Exercice de maison.\n"
+    "- essentiel_a_retenir : definitions, lois, formules mathematiques et unites.\n"
+    "- exercices_application : exercices d'application immediats, chacun avec un enonce et une "
+    "correction.\n"
+    "- devoir_maison : un exercice de maison.\n"
 )
 
 # Priority rule for the corpus. Real fiches and guides ingested in the corpus are the reference.
 CORPUS_PRIORITY_RULE = (
-    "RÈGLE DE PRIORITÉ (absolue) : les extraits 'Contexte curriculaire retrouvé' proviennent "
-    "de fiches réelles et de guides d'exécution ingérés dans le corpus. Ils sont la référence "
-    "prioritaire, avant toute connaissance générale ou gabarit.\n"
-    "- Forme : reprends le canevas de ces fiches (sections, intitulés des phases, découpage "
-    "des phases, formulation des activités professeur et élève, interactions prof/élève, "
-    "timing, rubriques d'évaluation).\n"
-    "- Fond : reprends leur contenu scientifique, la situation-problème, les activités "
-    "d'apprentissage et les notions, en les adaptant à la matière, au niveau, au thème et à "
-    "la compétence demandés.\n"
+    "REGLE DE PRIORITE (absolue) : les extraits 'Contexte curriculaire retrouve' proviennent "
+    "de fiches reelles et de guides d'execution ingeres dans le corpus. Ils sont la reference "
+    "prioritaire, avant toute connaissance generale ou gabarit.\n"
+    "- Forme : reprends le canevas de ces fiches (sections, intitules des phases, decoupage "
+    "des phases, formulation des activites professeur et eleve, interactions prof/eleve, "
+    "timing, rubriques d'evaluation).\n"
+    "- Fond : reprends leur contenu scientifique, la situation-probleme, les activites "
+    "d'apprentissage et les notions, en les adaptant a la matiere, au niveau, au theme et a "
+    "la competence demandes.\n"
     "- Ne contredis pas ces extraits. Ne cite une source que si elle figure dans les extraits.\n"
     "- Si un point n'est couvert par aucun extrait, reste prudent et n'invente ni formule, ni "
-    "fait, ni référence."
+    "fait, ni reference."
 )
 
 SYSTEM_PROMPT = (
     "You are an expert pedagogue for Togolese secondary schools following the APC "
     "(Approche Par Competences) framework. Produce a complete lesson plan with operational "
-    "pedagogical objectives, timed phases, professor and student activities, and evaluation "
-    "items. The request contains the teacher's administrative information (teacher block); "
-    "keep it unchanged and do not invent any teacher, DRE, IESG or school details. "
-    "Canonical form: the lesson follows the APC Physique 2nde S fiche model given in the user "
-    "message: header (administrative and pedagogical elements), capacities-to-contents matrix, "
-    "didactic grid with the strict APC sequence (prerequisites, situation-problem, work "
-    "organisation and resolution, discussion, institutionalisation and written trace, "
-    "reinvestment and formative evaluation) with teacher and student postures, then final "
-    "consolidation (key points with definitions, laws, formulas and units; application exercises "
-    "with corrections; homework). "
-    "When the user message contains real corpus extracts, they are the absolute reference for "
-    "form and content, with priority over general knowledge and over the canonical model. "
-    "When no extract is present, follow the canonical model and do not claim or cite any "
-    "source, guide or fiche. "
-    "Every entry in activities MUST include a non-empty professor_activity (what the teacher "
-    "does) and a non-empty student_activity (what the learners do), in addition to phase, "
-    "duration_minutes and materials. Never omit these two fields. "
+    "pedagogical objectives, a capacities-to-contents matrix, timed didactic moments, professor "
+    "and student activities, evaluation items and a final consolidation block. "
+    "The request contains the teacher's administrative information (teacher block); keep it "
+    "unchanged and do not invent any teacher, DRE, IESG or school details. "
+    "STRICT STRUCTURE: the timing and the activities must each contain exactly the 6 canonical "
+    "didactic moments, in this order: prerequis, situation_probleme, recherche_resolution, "
+    "mise_en_commun, institutionnalisation, reinvestissement. Do not add, remove, rename or "
+    "reorder them. Each activity must describe the teacher role AND the learners role for its "
+    "moment (professor_activity and student_activity, both non-empty). "
+    "Capacities matrix: capacites_contenus lists each operational capacity with its notional "
+    "contents. "
+    "Consolidation: essentiel_a_retenir (definitions, laws, formulas and units), "
+    "exercices_application (each item with an enonce and a correction), devoir_maison (one "
+    "homework exercise). "
+    "Canonical form: the APC Physique Seconde fiche model given in the user message is the "
+    "reference for form. When the user message contains real corpus extracts, they are the "
+    "absolute reference for form and content, with priority over general knowledge and over the "
+    "canonical model. When no extract is present, follow the canonical model and do not claim or "
+    "cite any source, guide or fiche. "
     "Togolese secondary lessons are measured in official periods of 55 minutes. The total "
-    "duration is always 1 to 6 periods (55, 110, 165, 220, 275 or 330 minutes). Distribute the "
-    "timing and activities so that the phase durations add up exactly to the total duration, "
-    "and so that each period is accounted for: the sum of timing durations must equal the total "
-    "minutes, and the sum of activity durations must equal the total minutes. Give longer phases "
-    "(construction, application) the larger share in multi-period lessons, keep a short motivation "
-    "and synthesis, and reserve the final period time for evaluation when there are several periods. "
-    "Each phase's duration_minutes must be a positive integer. Keep the scientific content "
-    "rigorous and consistent with the curriculum; do not invent facts or formulas."
+    "duration is always 1 to 6 periods (55, 110, 165, 220, 275 or 330 minutes). The sum of the "
+    "timing durations and the sum of the activity durations must each equal the total minutes "
+    "exactly. Give recherche_resolution and reinvestissement the larger share in multi-period "
+    "lessons, keep prerequis and institutionnalisation short. Each duration_minutes must be a "
+    "positive integer. Keep the scientific content rigorous; do not invent facts or formulas."
 )
 
 
@@ -115,9 +119,9 @@ def period_hint(duration_minutes: int) -> str:
     hours = duration_minutes // 60
     minutes = duration_minutes % 60
     return (
-        f"Durée totale : {duration_minutes} minutes, soit {periods} période(s) de {PERIOD_MINUTES} minutes "
-        f"({periods} x {PERIOD_MINUTES} min, affichée comme {hours} h {minutes:02d} min). "
-        "Répartissez les phases et les activités sur ces périodes, sans dépasser ni laisser de temps vide."
+        f"Duree totale : {duration_minutes} minutes, soit {periods} periode(s) de {PERIOD_MINUTES} minutes "
+        f"({periods} x {PERIOD_MINUTES} min, affichee comme {hours} h {minutes:02d} min). "
+        "Repartis les 6 moments et les activites sur ces periodes, sans depasser ni laisser de temps vide."
     )
 
 
@@ -132,14 +136,14 @@ def build_prompt(request: LessonPlanRequest, feedback: list[str]) -> str:
     if request.context and request.context.strip():
         prompt += (
             "\n\n" + CORPUS_PRIORITY_RULE
-            + "\n\nContexte curriculaire retrouvé (fiches réelles et guides ingérés) :\n"
+            + "\n\nContexte curriculaire retrouve (fiches reelles et guides ingeres) :\n"
             + request.context
             + "\n\n" + APC_FICHE_TEMPLATE
         )
     else:
         prompt += (
-            "\n\nAucun contexte curriculaire retrouvé dans le corpus : utilise le modèle canonique "
-            "ci-dessous et n'invente aucune référence ni source.\n\n" + APC_FICHE_TEMPLATE
+            "\n\nAucun contexte curriculaire retrouve dans le corpus : utilise le modele canonique "
+            "ci-dessous et n'invente aucune reference ni source.\n\n" + APC_FICHE_TEMPLATE
         )
     if feedback:
         prompt += "\n\nFix these issues from the previous attempt:\n- " + "\n- ".join(feedback)
@@ -151,4 +155,10 @@ async def generate_lesson_plan(request: LessonPlanRequest, feedback: list[str]) 
     result = await build_generator().run(build_prompt(request, feedback))
     plan = result.output
     # The teacher's administrative block comes from the request, never from the model output.
-    return plan.model_copy(update={"teacher": request.teacher})
+    return plan.model_copy(
+        update={
+            "teacher": request.teacher,
+            "dre": request.teacher.dre,
+            "etablissement": request.teacher.etablissement,
+        }
+    )
