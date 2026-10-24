@@ -20,6 +20,14 @@
   const PARAM_FIELDS = ['discipline', 'classe', 'serie', 'duree', 'theme', 'competence'];
   const TEACHER_FIELDS = ['nom', 'prenom', 'dre', 'iesg', 'etablissement', 'telephone'];
   const PHASE_KINDS = ['motivation', 'prerequisites', 'construction', 'application', 'synthesis', 'evaluation'];
+  const PHASE_LABELS = {
+    motivation: 'Motivation',
+    prerequisites: 'Mobilisation des prérequis',
+    construction: 'Construction',
+    application: 'Application',
+    synthesis: 'Synthèse',
+    evaluation: 'Évaluation',
+  };
 
   const state = { step: 1, teacher: null, params: null, fiche: null, source: null };
 
@@ -181,16 +189,55 @@
     return run;
   }
 
+  /* The API returns a LessonPlan (title, timing, activities, ...), not the French fiche shape.
+     Accept that shape and fail loudly on anything else. */
   async function requestFiche(payload) {
     const response = await fetchWithTimeout(`${API_BASE}/generate`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
       body: JSON.stringify(payload),
     });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    if (!response.ok) {
+      let detail = '';
+      try {
+        const body = await response.json();
+        detail = (body && body.error && body.error.message) || '';
+      } catch (err) {
+        detail = '';
+      }
+      throw new Error(`HTTP ${response.status}${detail ? ' : ' + detail : ''}`);
+    }
     const data = await response.json();
-    if (!data || !Array.isArray(data.phases)) throw new Error('Réponse invalide');
+    if (!data || !Array.isArray(data.activities) || !Array.isArray(data.timing)) {
+      throw new Error('Réponse invalide : plan de cours absent');
+    }
     return data;
+  }
+
+  /* Convert the LessonPlan returned by POST /api/v1/generate into the fiche view model.
+     The full plan is kept so the DOCX export can send it back unchanged. */
+  function planToFiche(plan, teacher, params) {
+    const activities = Array.isArray(plan.activities) ? plan.activities : [];
+    const timing = Array.isArray(plan.timing) ? plan.timing : [];
+    const phases = activities.map((activity, index) => ({
+      nom: (timing[index] && timing[index].description) || PHASE_LABELS[activity.phase] || String(activity.phase),
+      duree: activity.duration_minutes,
+      enseignant: activity.professor_activity || '',
+      eleves: activity.student_activity || '',
+      supports: (activity.materials || []).join(', '),
+    }));
+    return Object.assign({}, plan, {
+      titre: plan.title,
+      enseignant: teacher ? `${teacher.prenom} ${teacher.nom}` : '',
+      etablissement: teacher ? teacher.etablissement : '',
+      discipline: plan.subject,
+      classe: params ? params.classe : plan.level,
+      serie: params ? params.serie : '',
+      theme: plan.theme,
+      competence: plan.competence,
+      duree: plan.duration_minutes,
+      phases: phases,
+    });
   }
 
   function buildDemoFiche(teacher, params) {
@@ -238,11 +285,14 @@
     let fiche;
     let source = 'api';
     try {
-      fiche = await requestFiche(payload);
+      const plan = await requestFiche(payload);
+      fiche = planToFiche(plan, state.teacher, state.params);
     } catch (err) {
       source = 'demo';
       fiche = buildDemoFiche(state.teacher, state.params);
-      setNotice('gen-notice', 'Le service de génération n’est pas disponible pour le moment. Une fiche de démonstration a été créée localement ; elle ne remplace pas une fiche générée par PrepaCours.');
+      const reason = err && err.message ? err.message : 'erreur inconnue';
+      setNotice('gen-notice', `Le service de génération n’est pas disponible (${reason}). Une fiche de démonstration a été créée localement ; elle ne remplace pas une fiche générée par PrepaCours.`);
+      toast('Génération IA en échec : ' + reason, true);
     }
     await animation;
     btn.disabled = false;
