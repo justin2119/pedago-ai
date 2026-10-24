@@ -9,10 +9,10 @@ from pedago_ai.schemas.lesson_plan import PERIOD_MINUTES, LessonPlan, LessonPlan
 
 OUTPUT_RETRIES = 3
 
-# Canonical APC fiche structure, used as form (structure, phase split, wording) guidance.
+# Canonical APC fiche structure. Used ONLY as a fallback when the corpus returns no extract.
 # It is a template, not a source: it must never be presented as a retrieved reference.
 APC_FICHE_TEMPLATE = (
-    "Structure canonique d'une fiche APC togolaise (forme, à reproduire sans copier le fond) :\n"
+    "Structure canonique d'une fiche APC togolaise (repli uniquement, aucune source citée) :\n"
     "1. Compétence visée et objectifs pédagogiques opérationnels (verbes observables).\n"
     "2. Mobilisation des prérequis : rappel court, questions au professeur, réponses des élèves.\n"
     "3. Situation-problème / découverte : une situation d'apprentissage concrète, contextualisée "
@@ -24,18 +24,32 @@ APC_FICHE_TEMPLATE = (
     "6. Réinvestissement / évaluation : exercices d'application, critères de réussite.\n"
 )
 
+# Priority rule for the corpus. Real fiches and guides ingested in the corpus are the reference.
+CORPUS_PRIORITY_RULE = (
+    "RÈGLE DE PRIORITÉ (absolue) : les extraits 'Contexte curriculaire retrouvé' proviennent "
+    "de fiches réelles et de guides d'exécution ingérés dans le corpus. Ils sont la référence "
+    "prioritaire, avant toute connaissance générale ou gabarit.\n"
+    "- Forme : reprends le canevas de ces fiches (sections, intitulés des phases, découpage "
+    "des phases, formulation des activités professeur et élève, interactions prof/élève, "
+    "timing, rubriques d'évaluation).\n"
+    "- Fond : reprends leur contenu scientifique, la situation-problème, les activités "
+    "d'apprentissage et les notions, en les adaptant à la matière, au niveau, au thème et à "
+    "la compétence demandés.\n"
+    "- Ne contredis pas ces extraits. Ne cite une source que si elle figure dans les extraits.\n"
+    "- Si un point n'est couvert par aucun extrait, reste prudent et n'invente ni formule, ni "
+    "fait, ni référence."
+)
+
 SYSTEM_PROMPT = (
     "You are an expert pedagogue for Togolese secondary schools following the APC "
     "(Approche Par Competences) framework. Produce a complete lesson plan with operational "
     "pedagogical objectives, timed phases, professor and student activities, and evaluation "
     "items. The request contains the teacher's administrative information (teacher block); "
     "keep it unchanged and do not invent any teacher, DRE, IESG or school details. "
-    "Reference grounding: the user message may contain 'Contexte curriculaire retrouvé' "
-    "(passages from ingested official guides and real model fiches). When present, follow "
-    "its form (sections, phase split, activity wording, rubrics) and its scientific content, "
-    "and adapt it to the requested subject, level, theme and competence. When it is absent "
-    "or empty, follow the APC fiche structure given in the user message, and do not claim "
-    "or cite any source, guide or fiche as a reference. "
+    "When the user message contains real corpus extracts, they are the absolute reference for "
+    "form and content, with priority over general knowledge and over the fallback template. "
+    "When no extract is present, follow the fallback APC structure and do not claim or cite "
+    "any source, guide or fiche. "
     "Every entry in activities MUST include a non-empty professor_activity (what the teacher "
     "does) and a non-empty student_activity (what the learners do), in addition to phase, "
     "duration_minutes and materials. Never omit these two fields. "
@@ -81,18 +95,23 @@ def period_hint(duration_minutes: int) -> str:
 
 
 def build_prompt(request: LessonPlanRequest, feedback: list[str]) -> str:
-    """Assemble the generation prompt: request, period hint, APC template, context and feedback."""
+    """Assemble the generation prompt.
+
+    With corpus extracts: the priority rule and the extracts come first, and the fallback template
+    is not added. Without extracts: the fallback template is used and no source is invented.
+    """
     prompt = request.model_dump_json(indent=2)
     prompt += "\n\n" + period_hint(request.duration_minutes)
-    prompt += "\n\n" + APC_FICHE_TEMPLATE
     if request.context and request.context.strip():
         prompt += (
-            "\n\nContexte curriculaire retrouvé (guides et fiches réelles ingérés) :\n"
+            "\n\n" + CORPUS_PRIORITY_RULE
+            + "\n\nContexte curriculaire retrouvé (fiches réelles et guides ingérés) :\n"
             + request.context
         )
     else:
         prompt += (
-            "\n\nAucun contexte curriculaire retrouvé : n'invente aucune référence ni source."
+            "\n\nAucun contexte curriculaire retrouvé dans le corpus : utilise la structure de repli "
+            "ci-dessous et n'invente aucune référence ni source.\n\n" + APC_FICHE_TEMPLATE
         )
     if feedback:
         prompt += "\n\nFix these issues from the previous attempt:\n- " + "\n- ".join(feedback)
