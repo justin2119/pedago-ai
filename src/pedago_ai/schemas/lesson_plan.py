@@ -88,8 +88,14 @@ class Activity(BaseModel):
     """A professor or student activity within a lesson phase."""
 
     phase: ActivityKind
-    professor_activity: str = Field(..., description="What the teacher does.")
-    student_activity: str = Field(..., description="What the learners do.")
+    professor_activity: str = Field(
+        "",
+        description="What the teacher does during this phase. Required in every activity; never omit it.",
+    )
+    student_activity: str = Field(
+        "",
+        description="What the learners do during this phase. Required in every activity; never omit it.",
+    )
     duration_minutes: int = Field(..., ge=1)
     materials: list[str] = Field(default_factory=list)
 
