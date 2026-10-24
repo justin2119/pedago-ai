@@ -17,7 +17,7 @@
     { key: 'drafting', label: 'Drafting' },
     { key: 'iesg', label: 'IESG Validation' },
   ];
-  const PARAM_FIELDS = ['discipline', 'classe', 'serie', 'duree', 'theme', 'competence'];
+  const PARAM_FIELDS = ['discipline', 'classe', 'serie', 'duree', 'theme', 'competence', 'fiche_numero', 'semaine', 'annee_scolaire'];
   const TEACHER_FIELDS = ['nom', 'prenom', 'dre', 'iesg', 'etablissement', 'telephone'];
 
   /* The 6 canonical APC Togo didactic moments, in order (must match the backend enum). */
@@ -128,6 +128,7 @@
   /* ---------- Step 2: Parameters ---------- */
 
   function readParamsForm() {
+    const ficheRaw = $('#fiche_numero').value.trim();
     return {
       discipline: $('#discipline').value,
       classe: $('#classe').value,
@@ -135,6 +136,9 @@
       duree: Number($('#duree').value),
       theme: $('#theme').value.trim(),
       competence: $('#competence').value.trim(),
+      fiche_numero: ficheRaw ? Number(ficheRaw) : null,
+      semaine: $('#semaine').value.trim(),
+      annee_scolaire: $('#annee_scolaire').value.trim(),
     };
   }
 
@@ -223,6 +227,9 @@
       etablissement: plan.etablissement || (teacher ? teacher.etablissement : ''),
       classe: params ? params.classe : plan.level,
       serie: params ? params.serie : '',
+      fiche_numero: params && params.fiche_numero != null ? params.fiche_numero : (plan.fiche_numero || null),
+      semaine: params && params.semaine ? params.semaine : (plan.semaine || ''),
+      annee_scolaire: params && params.annee_scolaire ? params.annee_scolaire : (plan.annee_scolaire || ''),
     });
   }
 
@@ -244,9 +251,9 @@
       teacher: teacher,
       dre: teacher ? teacher.dre : '',
       etablissement: teacher ? teacher.etablissement : '',
-      fiche_numero: 1,
-      semaine: '',
-      annee_scolaire: '',
+      fiche_numero: params.fiche_numero != null ? params.fiche_numero : 1,
+      semaine: params.semaine || '',
+      annee_scolaire: params.annee_scolaire || '',
       subject: params.discipline,
       level: params.classe,
       classe: params.classe,
