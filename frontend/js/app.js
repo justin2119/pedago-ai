@@ -220,12 +220,17 @@
     const btn = $('#generate-btn');
     btn.disabled = true;
     setNotice('gen-notice', '');
+    const teacher = {
+      ...state.teacher,
+      classe: (state.params && state.params.classe) ? state.params.classe : "",
+      serie: (state.params && state.params.serie) ? state.params.serie : null,
+    };
     const payload = {
-      teacher: state.teacher,
+      teacher: teacher,
       subject: state.params.discipline,
       level: state.params.classe,
       theme: state.params.theme,
-      duration_minutes: state.params.duree,
+      duration_minutes: Number(state.params ? state.params.duree : 55),
       competence: state.params.competence,
     };
     const animation = runPipelineStatus();
